@@ -1,1 +1,100 @@
+name: Build Game
 
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+env:
+  UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+  UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
+  UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
+
+jobs:
+  android:
+    name: Android APK
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Free disk space
+        uses: jlumbroso/free-disk-space@v1.3.1
+        with:
+          tool-cache: false
+          large-packages: false
+
+      - uses: actions/cache@v4
+        with:
+          path: Library
+          key: Library-Android-${{ hashFiles('Assets/**', 'Packages/**', 'ProjectSettings/**') }}
+          restore-keys: Library-Android-
+
+      - uses: game-ci/unity-builder@v4
+        with:
+          unityVersion: auto
+          targetPlatform: Android
+          buildMethod: BuildScript.Build
+          buildName: LastLight
+          versioning: None
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: LastLight-Android-APK
+          path: build/Android
+
+  ios-project:
+    name: iOS Xcode project
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/cache@v4
+        with:
+          path: Library
+          key: Library-iOS-${{ hashFiles('Assets/**', 'Packages/**', 'ProjectSettings/**') }}
+          restore-keys: Library-iOS-
+
+      - uses: game-ci/unity-builder@v4
+        with:
+          unityVersion: auto
+          targetPlatform: iOS
+          buildMethod: BuildScript.Build
+          buildName: LastLight
+          versioning: None
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: LastLight-iOS-project
+          path: build/iOS
+
+  ios-ipa:
+    name: iOS IPA (unsigned)
+    needs: ios-project
+    runs-on: macos-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: LastLight-iOS-project
+          path: xcode
+
+      - name: Archive without signing and pack IPA
+        working-directory: xcode
+        run: |
+          find . -name "*.sh" -exec chmod +x {} \; || true
+          chmod +x MapFileParser 2>/dev/null || true
+          xcodebuild -project Unity-iPhone.xcodeproj \
+            -scheme Unity-iPhone \
+            -configuration Release \
+            -sdk iphoneos \
+            -destination 'generic/platform=iOS' \
+            -archivePath "$PWD/App.xcarchive" \
+            archive \
+            CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=NO
+          mkdir -p Payload
+          cp -R App.xcarchive/Products/Applications/*.app Payload/
+          zip -qr ../LastLight.ipa Payload
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: LastLight-iOS-IPA
+          path: LastLight.ipa
