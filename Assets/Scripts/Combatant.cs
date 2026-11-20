@@ -9,6 +9,8 @@ public class Combatant : MonoBehaviour
     public float health = 100f;
     public bool isPlayer;
     public Transform eye;
+    public float regenRate = 25f;
+    public float regenDelay = 4f;
 
     public bool Alive { get; private set; }
     float lastHurt;
@@ -17,8 +19,8 @@ public class Combatant : MonoBehaviour
 
     void Update()
     {
-        if (isPlayer && Alive && health < maxHealth && Time.time - lastHurt > 4f)
-            health = Mathf.Min(maxHealth, health + 25f * Time.deltaTime);
+        if (isPlayer && Alive && health < maxHealth && Time.time - lastHurt > regenDelay)
+            health = Mathf.Min(maxHealth, health + regenRate * Time.deltaTime);
     }
 
     public void TakeDamage(float dmg, Combatant by)

@@ -21,10 +21,25 @@ public class MatchManager : MonoBehaviour
     public GameObject hitMarker, endPanel;
     public Button restartButton;
 
+    // upgrade cards
+    public GameObject cardPanel;
+    public Text[] cardTitle = new Text[3];
+    public Text[] cardDesc = new Text[3];
+    public Button[] cardButton = new Button[3];
+
     public int scoreLimit = 20;
     public float matchTime = 180f;
 
     public bool Playing { get; private set; }
+
+    static readonly string[] CardNames = { "RAPID FIRE", "HEAVY ROUNDS", "EXTRA HEALTH", "REGENERATION", "HIGH JUMP", "QUICK RELOAD", "BIG MAGAZINE" };
+    static readonly string[] CardDescs =
+    {
+        "Fire 20% faster", "Bullets do 25% more damage", "+40 max health", "Heal sooner and faster",
+        "Jump 30% higher", "Reload 40% faster", "+15 bullets per magazine"
+    };
+    int[] cardIds = new int[3];
+    int playerKills;
 
     int[] score = new int[2];
     float timeLeft, hurtAlpha, hitUntil, msgUntil;
@@ -33,6 +48,7 @@ public class MatchManager : MonoBehaviour
     void Awake()
     {
         I = this;
+        Time.timeScale = 1f;
         Application.targetFrameRate = 60;
         Screen.autorotateToPortrait = false;
         Screen.autorotateToPortraitUpsideDown = false;
@@ -49,6 +65,12 @@ public class MatchManager : MonoBehaviour
         if (restartButton != null)
             restartButton.onClick.AddListener(() => SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex));
         if (endPanel != null) endPanel.SetActive(false);
+        if (cardPanel != null) cardPanel.SetActive(false);
+        for (int i = 0; i < cardButton.Length; i++)
+        {
+            int idx = i;
+            if (cardButton[i] != null) cardButton[i].onClick.AddListener(() => PickCard(idx));
+        }
         if (hitMarker != null) hitMarker.SetActive(false);
         Say("FIGHT!", 1.6f);
         RefreshScore();
@@ -120,12 +142,54 @@ public class MatchManager : MonoBehaviour
             feed.Add(Tag(killer) + "  >  " + Tag(victim));
             if (feed.Count > 4) feed.RemoveAt(0);
             if (feedText != null) feedText.text = string.Join("\n", feed.ToArray());
-            if (killer.isPlayer) { Sfx.Kill(Camera.main.transform.position); Say("ELIMINATED " + victim.displayName.ToUpper(), 1.2f); }
+            if (killer.isPlayer)
+            {
+                Sfx.Kill(Camera.main.transform.position);
+                Say("ELIMINATED " + victim.displayName.ToUpper(), 1.2f);
+                playerKills++;
+            }
             RefreshScore();
         }
         if (victim.isPlayer) Say("You were eliminated", 2.5f);
         if (score[0] >= scoreLimit || score[1] >= scoreLimit) { EndMatch(); return; }
         StartCoroutine(Respawn(victim));
+        if (killer != null && killer.isPlayer && killer.team != victim.team && playerKills % 5 == 0) ShowCards();
+    }
+
+    void ShowCards()
+    {
+        if (cardPanel == null || !Playing) return;
+        List<int> pool = new List<int>();
+        for (int i = 0; i < CardNames.Length; i++) pool.Add(i);
+        for (int i = 0; i < 3; i++)
+        {
+            int k = Random.Range(0, pool.Count);
+            cardIds[i] = pool[k];
+            pool.RemoveAt(k);
+            if (cardTitle[i] != null) cardTitle[i].text = CardNames[cardIds[i]];
+            if (cardDesc[i] != null) cardDesc[i].text = CardDescs[cardIds[i]];
+        }
+        if (fps != null && fps.fireButton != null) fps.fireButton.Release();
+        cardPanel.SetActive(true);
+        Time.timeScale = 0f;
+    }
+
+    void PickCard(int slot)
+    {
+        int id = cardIds[slot];
+        switch (id)
+        {
+            case 0: weapon.fireDelay *= 0.8f; break;
+            case 1: weapon.damage *= 1.25f; break;
+            case 2: player.maxHealth += 40f; player.health += 40f; break;
+            case 3: player.regenRate += 20f; player.regenDelay = Mathf.Max(1.5f, player.regenDelay - 1.2f); break;
+            case 4: fps.jumpSpeed *= 1.3f; break;
+            case 5: weapon.reloadTime *= 0.6f; break;
+            case 6: weapon.AddMag(15); break;
+        }
+        cardPanel.SetActive(false);
+        Time.timeScale = 1f;
+        Say("+ " + CardNames[id], 1.5f);
     }
 
     void SetActiveState(Combatant c, bool on)
@@ -160,6 +224,8 @@ public class MatchManager : MonoBehaviour
     {
         if (!Playing) return;
         Playing = false;
+        Time.timeScale = 1f;
+        if (cardPanel != null) cardPanel.SetActive(false);
         string title = score[0] > score[1] ? "VICTORY" : (score[0] < score[1] ? "DEFEAT" : "DRAW");
         if (endTitle != null) endTitle.text = title;
         if (endScore != null) endScore.text = score[0] + "  -  " + score[1];

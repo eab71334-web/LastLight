@@ -28,6 +28,8 @@ public class WeaponController : MonoBehaviour
         if (flash != null) flash.enabled = false;
     }
 
+    public void AddMag(int n) { magSize += n; Ammo += n; }
+
     public void Reload()
     {
         if (Reloading || Ammo >= magSize) return;

@@ -451,6 +451,28 @@ public static class SceneBuilder
         Text rbl = MakeText(rb.transform, "Label", "Play again", 50, TextAnchor.MiddleCenter, new Color(0.05f, 0.05f, 0.15f), FontStyle.Bold);
         Stretch(rbl.transform, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
 
+        // upgrade cards (shown every 5 kills)
+        Image cardImg = MakeImage(ct, "CardPanel", new Color(0, 0, 0, 0.8f));
+        Stretch(cardImg.transform, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
+        Text cardHead = MakeText(cardImg.transform, "Head", "CHOOSE AN UPGRADE", 72, TextAnchor.MiddleCenter, Color.white, FontStyle.Bold);
+        Fixed(cardHead.transform, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0, -110), new Vector2(1400, 120));
+        Text[] cTitles = new Text[3];
+        Text[] cDescs = new Text[3];
+        Button[] cBtns = new Button[3];
+        for (int i = 0; i < 3; i++)
+        {
+            Image cb = MakeImage(cardImg.transform, "Card" + i, new Color(0.1f, 0.13f, 0.32f, 0.98f), round, true);
+            Fixed(cb.transform, mid, mid, new Vector2((i - 1) * 560, -30), new Vector2(500, 600));
+            Button bt = cb.gameObject.AddComponent<Button>();
+            bt.targetGraphic = cb;
+            Text ct1 = MakeText(cb.transform, "Title", "CARD", 50, TextAnchor.MiddleCenter, new Color(0.3f, 0.9f, 1f), FontStyle.Bold);
+            Stretch(ct1.transform, new Vector2(0.05f, 0.55f), new Vector2(0.95f, 0.92f), Vector2.zero, Vector2.zero);
+            Text ct2 = MakeText(cb.transform, "Desc", "", 38, TextAnchor.UpperCenter, Color.white);
+            Stretch(ct2.transform, new Vector2(0.1f, 0.12f), new Vector2(0.9f, 0.52f), Vector2.zero, Vector2.zero);
+            cTitles[i] = ct1; cDescs[i] = ct2; cBtns[i] = bt;
+        }
+        cardImg.gameObject.SetActive(false);
+
         // ---- match logic
         GameObject game = new GameObject("Game");
         MatchManager mm = game.AddComponent<MatchManager>();
@@ -461,6 +483,7 @@ public static class SceneBuilder
         mm.ammoText = ammo; mm.healthText = htext; mm.centerText = center; mm.feedText = feed;
         mm.endTitle = endTitle; mm.endScore = endScore;
         mm.healthFill = hfill; mm.hurtOverlay = hurt;
+        mm.cardPanel = cardImg.gameObject; mm.cardTitle = cTitles; mm.cardDesc = cDescs; mm.cardButton = cBtns;
         mm.hitMarker = hm; mm.endPanel = endImg.gameObject; mm.restartButton = rbBtn;
 
         EditorSceneManager.SaveScene(scene, ScenePath);

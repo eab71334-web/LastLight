@@ -7,5 +7,6 @@ public class HoldButton : MonoBehaviour, IPointerDownHandler, IPointerUpHandler
     public bool Held { get; private set; }
     public void OnPointerDown(PointerEventData e) { Held = true; }
     public void OnPointerUp(PointerEventData e) { Held = false; }
+    public void Release() { Held = false; }
     void OnDisable() { Held = false; }
 }
