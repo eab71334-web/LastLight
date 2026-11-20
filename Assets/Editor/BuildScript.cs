@@ -11,7 +11,7 @@ using UnityEngine;
 /// </summary>
 public static class BuildScript
 {
-    const string ProductName = "The Last Light";
+    const string ProductName = "Neon Arena";
 
     static string Arg(string[] args, string key, string fallback)
     {
@@ -25,7 +25,7 @@ public static class BuildScript
         string[] args = Environment.GetCommandLineArgs();
         string path = Arg(args, "-customBuildPath", "Builds/Out");
         string targetName = Arg(args, "-customBuildTarget", "Android");
-        string buildName = Arg(args, "-customBuildName", "LastLight");
+        string buildName = Arg(args, "-customBuildName", "NeonArena");
         BuildTarget target = (BuildTarget)Enum.Parse(typeof(BuildTarget), targetName);
 
         SceneBuilder.BuildScene();
@@ -42,7 +42,7 @@ public static class BuildScript
         {
             Directory.CreateDirectory(path);
             location = path; // Xcode project folder
-            PlayerSettings.SetApplicationIdentifier(NamedBuildTarget.iOS, "com.lastlight.game");
+            PlayerSettings.SetApplicationIdentifier(NamedBuildTarget.iOS, "com.neonarena.game");
             PlayerSettings.iOS.targetOSVersionString = "13.0";
         }
         else
@@ -67,7 +67,7 @@ public static class BuildScript
     public static void ApplyAndroidSettings()
     {
         EditorUserBuildSettings.buildAppBundle = false;
-        PlayerSettings.SetApplicationIdentifier(NamedBuildTarget.Android, "com.lastlight.game");
+        PlayerSettings.SetApplicationIdentifier(NamedBuildTarget.Android, "com.neonarena.game");
         PlayerSettings.SetScriptingBackend(NamedBuildTarget.Android, ScriptingImplementation.IL2CPP);
         PlayerSettings.Android.targetArchitectures = AndroidArchitecture.ARM64;
         PlayerSettings.Android.minSdkVersion = AndroidSdkVersions.AndroidApiLevel24;
@@ -75,10 +75,11 @@ public static class BuildScript
 
     public static void ApplySettings()
     {
-        PlayerSettings.companyName = "LastLight";
+        PlayerSettings.companyName = "NeonArena";
         PlayerSettings.productName = ProductName;
         PlayerSettings.colorSpace = ColorSpace.Linear;
         PlayerSettings.defaultInterfaceOrientation = UIOrientation.AutoRotation;
+        PlayerSettings.Android.renderOutsideSafeArea = true;
         PlayerSettings.allowedAutorotateToPortrait = false;
         PlayerSettings.allowedAutorotateToPortraitUpsideDown = false;
         PlayerSettings.allowedAutorotateToLandscapeLeft = true;

@@ -6,8 +6,8 @@ using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
 /// <summary>
-/// Builds the whole game scene from code (island, village, lighthouse, characters, UI).
-/// Run it from the menu "Story / Rebuild Main Scene" or let BuildScript call it during CI builds.
+/// Builds the whole Neon Arena scene from code (arena, units, HUD).
+/// Run it from the menu "Neon / Rebuild Main Scene" or let BuildScript call it during CI builds.
 /// </summary>
 public static class SceneBuilder
 {
@@ -102,81 +102,6 @@ public static class SceneBuilder
         return l;
     }
 
-    // ------------------------------------------------------------------ world pieces
-    static void MakeTree(Transform parent, Vector3 pos, float s, Material trunk, Material leaf, Material leaf2)
-    {
-        GameObject root = new GameObject("Tree");
-        root.transform.SetParent(parent, false);
-        root.transform.localPosition = pos;
-        root.transform.localScale = Vector3.one * s;
-        Solid(PrimitiveType.Cylinder, "Trunk", new Vector3(0, 1.4f, 0), new Vector3(0.45f, 1.4f, 0.45f), trunk, root.transform);
-        Deco(PrimitiveType.Sphere, "Leaves", new Vector3(0, 3.7f, 0), new Vector3(3.2f, 3.0f, 3.2f), leaf, root.transform);
-        Deco(PrimitiveType.Sphere, "Leaves2", new Vector3(0.6f, 4.7f, 0.3f), new Vector3(2.2f, 2.2f, 2.2f), leaf2, root.transform);
-    }
-
-    static void MakeHouse(Transform parent, Vector3 pos, float yRot, Material wall, Material roof,
-                          Material door, Material window, Material stone)
-    {
-        GameObject root = new GameObject("House");
-        root.transform.SetParent(parent, false);
-        root.transform.localPosition = pos;
-        root.transform.localRotation = Quaternion.Euler(0, yRot, 0);
-        Solid(PrimitiveType.Cube, "Walls", new Vector3(0, 1.5f, 0), new Vector3(5, 3, 4), wall, root.transform);
-        Deco(PrimitiveType.Cube, "Roof", new Vector3(0, 3.0f, 0), new Vector3(3.6f, 3.6f, 4.6f), roof, root.transform, new Vector3(0, 0, 45));
-        Solid(PrimitiveType.Cube, "Chimney", new Vector3(1.5f, 5.0f, 0.8f), new Vector3(0.6f, 1.4f, 0.6f), stone, root.transform);
-        Deco(PrimitiveType.Cube, "Door", new Vector3(0, 1.0f, 2.02f), new Vector3(1.1f, 2.0f, 0.1f), door, root.transform);
-        Deco(PrimitiveType.Cube, "WindowL", new Vector3(-1.6f, 1.8f, 2.02f), new Vector3(0.8f, 0.8f, 0.1f), window, root.transform);
-        Deco(PrimitiveType.Cube, "WindowR", new Vector3(1.6f, 1.8f, 2.02f), new Vector3(0.8f, 0.8f, 0.1f), window, root.transform);
-    }
-
-    static Npc MakeNpc(Transform parent, string name, Vector3 pos, float yRot, float scale,
-                       Color cloth, Color hair, bool beard)
-    {
-        GameObject root = new GameObject(name);
-        root.transform.SetParent(parent, false);
-        root.transform.localPosition = pos;
-        root.transform.localRotation = Quaternion.Euler(0, yRot, 0);
-        root.transform.localScale = Vector3.one * scale;
-        CapsuleCollider cc = root.AddComponent<CapsuleCollider>();
-        cc.height = 1.9f; cc.radius = 0.4f; cc.center = new Vector3(0, 0.95f, 0);
-
-        Material clothM = Mat("Cloth_" + name, cloth);
-        Material skin = Mat("Skin", C(0.87f, 0.68f, 0.55f));
-        Material hairM = Mat("Hair_" + name, hair);
-        Material dark = Mat("Dark", C(0.05f, 0.05f, 0.05f));
-
-        Part(PrimitiveType.Capsule, "Body", new Vector3(0, 0.9f, 0), new Vector3(0.8f, 0.85f, 0.8f), clothM, root.transform);
-        Part(PrimitiveType.Sphere, "Head", new Vector3(0, 1.85f, 0), new Vector3(0.42f, 0.42f, 0.42f), skin, root.transform);
-        Part(PrimitiveType.Sphere, "Hair", new Vector3(0, 1.97f, -0.03f), new Vector3(0.46f, 0.3f, 0.46f), hairM, root.transform);
-        Part(PrimitiveType.Sphere, "EyeL", new Vector3(-0.07f, 1.88f, 0.18f), new Vector3(0.06f, 0.06f, 0.06f), dark, root.transform);
-        Part(PrimitiveType.Sphere, "EyeR", new Vector3(0.07f, 1.88f, 0.18f), new Vector3(0.06f, 0.06f, 0.06f), dark, root.transform);
-        if (beard)
-            Part(PrimitiveType.Sphere, "Beard", new Vector3(0, 1.72f, 0.1f), new Vector3(0.3f, 0.4f, 0.25f), hairM, root.transform);
-
-        Npc npc = root.AddComponent<Npc>();
-        npc.npcName = name;
-        npc.prompt = "Talk";
-        npc.range = 3.2f;
-        return npc;
-    }
-
-    static Collectible MakeCollectible(Transform parent, string name, string partName, Vector3 pos,
-                                       PrimitiveType shape, Vector3 visualScale, Vector3 visualEuler,
-                                       Material mat, Color glow, string[] lines)
-    {
-        GameObject root = new GameObject(name);
-        root.transform.SetParent(parent, false);
-        root.transform.localPosition = pos;
-        GameObject vis = Part(shape, "Visual", new Vector3(0, 1.0f, 0), visualScale, mat, root.transform, visualEuler);
-        AddLight(root.transform, "Glow", LightType.Point, new Vector3(0, 1.2f, 0), glow, 1.6f, 6f, true);
-        Collectible c = root.AddComponent<Collectible>();
-        c.partName = partName;
-        c.pickupLines = lines;
-        c.visual = vis.transform;
-        c.prompt = "Take";
-        c.range = 3.2f;
-        return c;
-    }
 
     // ------------------------------------------------------------------ UI helpers
     static RectTransform Stretch(Transform t, Vector2 aMin, Vector2 aMax, Vector2 offMin, Vector2 offMax)
@@ -228,298 +153,176 @@ public static class SceneBuilder
         return t;
     }
 
-    // ------------------------------------------------------------------ main entry
-    [MenuItem("Story/Rebuild Main Scene")]
+
+    // ------------------------------------------------------------------ arena
+    const float Half = 30f;
+    static readonly Color Cyan = new Color(0.1f, 0.85f, 1f);
+    static readonly Color Magenta = new Color(1f, 0.15f, 0.6f);
+
+    static Combatant MakeUnit(string name, int team, Vector3 pos, float yaw, bool isPlayer,
+                              Material teamMat, Material visor, List<Combatant> all)
+    {
+        GameObject root = new GameObject(name);
+        root.transform.position = pos;
+        root.transform.rotation = Quaternion.Euler(0f, yaw, 0f);
+        CharacterController cc = root.AddComponent<CharacterController>();
+        cc.height = 1.8f; cc.radius = 0.4f; cc.center = new Vector3(0f, 0.9f, 0f);
+        cc.stepOffset = 0.35f; cc.slopeLimit = 50f; cc.skinWidth = 0.05f;
+
+        Combatant c = root.AddComponent<Combatant>();
+        c.team = team; c.displayName = name; c.isPlayer = isPlayer; c.maxHealth = 100f; c.health = 100f;
+        GameObject eye = new GameObject("Eye");
+        eye.transform.SetParent(root.transform, false);
+        eye.transform.localPosition = new Vector3(0f, 1.6f, 0f);
+        c.eye = eye.transform;
+
+        if (!isPlayer)
+        {
+            Part(PrimitiveType.Capsule, "Body", new Vector3(0, 0.9f, 0), new Vector3(0.8f, 0.85f, 0.8f), teamMat, root.transform);
+            Part(PrimitiveType.Sphere, "Head", new Vector3(0, 1.62f, 0), new Vector3(0.42f, 0.42f, 0.42f), teamMat, root.transform);
+            Part(PrimitiveType.Cube, "Visor", new Vector3(0, 1.64f, 0.17f), new Vector3(0.34f, 0.1f, 0.14f), visor, root.transform);
+            Part(PrimitiveType.Cube, "Gun", new Vector3(0.3f, 1.05f, 0.35f), new Vector3(0.1f, 0.12f, 0.6f), visor, root.transform);
+            BotAI ai = root.AddComponent<BotAI>();
+            ai.self = c; ai.eye = c.eye;
+        }
+        all.Add(c);
+        return c;
+    }
+
+    [MenuItem("Neon/Rebuild Main Scene")]
     public static void BuildScene()
     {
         EnsureFolder("Assets/Scenes");
         EnsureFolder("Assets/Materials");
-
         var scene = EditorSceneManager.NewScene(NewSceneSetup.DefaultGameObjects, NewSceneMode.Single);
 
-        // ---- lighting & atmosphere
+        // ---- atmosphere
         Light sun = Object.FindObjectOfType<Light>();
         sun.type = LightType.Directional;
-        sun.transform.rotation = Quaternion.Euler(38, -32, 0);
-        sun.color = new Color(1f, 0.92f, 0.78f);
-        sun.intensity = 1.2f;
-        sun.shadows = LightShadows.Soft;
-        sun.shadowStrength = 0.85f;
+        sun.transform.rotation = Quaternion.Euler(50, -30, 0);
+        sun.color = new Color(0.6f, 0.55f, 1f);
+        sun.intensity = 0.5f;
+        sun.shadows = LightShadows.None;
+        RenderSettings.skybox = null;
+        RenderSettings.ambientMode = UnityEngine.Rendering.AmbientMode.Flat;
+        RenderSettings.ambientLight = new Color(0.22f, 0.18f, 0.38f);
         RenderSettings.fog = true;
         RenderSettings.fogMode = FogMode.Exponential;
-        RenderSettings.fogDensity = 0.005f;
-        RenderSettings.fogColor = new Color(0.72f, 0.8f, 0.88f);
+        RenderSettings.fogDensity = 0.014f;
+        RenderSettings.fogColor = new Color(0.06f, 0.03f, 0.14f);
 
         Camera cam = Camera.main;
-        cam.nearClipPlane = 0.2f;
-        cam.farClipPlane = 400f;
-        ThirdPersonCamera tpc = cam.gameObject.AddComponent<ThirdPersonCamera>();
+        cam.clearFlags = CameraClearFlags.SolidColor;
+        cam.backgroundColor = new Color(0.06f, 0.03f, 0.14f);
+        cam.fieldOfView = 78f;
+        cam.nearClipPlane = 0.05f;
+        cam.farClipPlane = 200f;
 
         // ---- materials
-        Material grass = Mat("Grass", C(0.33f, 0.55f, 0.25f), false, 0.05f);
-        Material sand = Mat("Sand", C(0.85f, 0.78f, 0.58f));
-        Material sea = Mat("Sea", C(0.08f, 0.30f, 0.45f), false, 0.92f, 0.2f);
-        Material dirt = Mat("Dirt", C(0.52f, 0.40f, 0.28f));
-        Material trunkM = Mat("Trunk", C(0.35f, 0.24f, 0.15f));
-        Material leafM = Mat("Leaf", C(0.18f, 0.42f, 0.20f));
-        Material leaf2M = Mat("Leaf2", C(0.25f, 0.50f, 0.22f));
-        Material rockM = Mat("Rock", C(0.50f, 0.50f, 0.52f));
-        Material wallM = Mat("Wall", C(0.86f, 0.80f, 0.68f));
-        Material roofM = Mat("Roof", C(0.60f, 0.25f, 0.18f));
-        Material doorM = Mat("Door", C(0.30f, 0.18f, 0.10f));
-        Material windowM = Mat("Window", C(1f, 0.85f, 0.45f), true);
-        Material stoneM = Mat("Stone", C(0.45f, 0.44f, 0.44f));
-        Material white = Mat("Whitewash", C(0.93f, 0.93f, 0.90f));
-        Material red = Mat("RedPaint", C(0.72f, 0.16f, 0.14f));
-        Material lampOff = Mat("LampOff", C(0.55f, 0.6f, 0.65f), false, 0.8f);
-        Material lampOn = Mat("LampOn", C(1f, 0.9f, 0.5f), true);
-        Material flameM = Mat("Flame", C(1f, 0.55f, 0.15f), true);
-        Material woodM = Mat("Wood", C(0.45f, 0.30f, 0.18f));
+        Material floor = Mat("Floor", new Color(0.06f, 0.06f, 0.11f), false, 0.3f);
+        Material wall = Mat("Wall", new Color(0.07f, 0.09f, 0.2f), false, 0.2f);
+        Material cover = Mat("Cover", new Color(0.09f, 0.11f, 0.25f), false, 0.25f);
+        Material nCyan = Mat("NeonCyan", Cyan, true);
+        Material nMag = Mat("NeonMagenta", Magenta, true);
+        Material nPurple = Mat("NeonPurple", new Color(0.55f, 0.2f, 1f), true);
+        Material teamBlue = Mat("TeamBlue", new Color(0.05f, 0.55f, 0.75f), true);
+        Material teamRed = Mat("TeamRed", new Color(0.8f, 0.1f, 0.35f), true);
+        Material visorMat = Mat("Visor", new Color(1f, 1f, 1f), true);
+        Material gunDark = Mat("GunDark", new Color(0.08f, 0.08f, 0.12f), false, 0.4f, 0.3f);
 
-        Transform world = new GameObject("World").transform;
-
-        // ---- sea + island
-        Deco(PrimitiveType.Plane, "Sea", new Vector3(0, -0.6f, 0), new Vector3(200, 1, 200), sea, world);
-        Solid(PrimitiveType.Cylinder, "Beach", new Vector3(0, -1.04f, 0), new Vector3(92, 1, 92), sand, world);
-        Solid(PrimitiveType.Cylinder, "Island", new Vector3(0, -1.0f, 0), new Vector3(76, 1, 76), grass, world);
-        Deco(PrimitiveType.Cube, "Path", new Vector3(0, 0.02f, 5), new Vector3(2.4f, 0.04f, 38), dirt, world);
-
-        // ---- places (x, z) used to keep trees away: Vector3(x, z, radius)
-        List<Vector3> keep = new List<Vector3>();
-        Vector3 spawn = new Vector3(0, 0.05f, -14);
-        keep.Add(new Vector3(0, -14, 5));
-        keep.Add(new Vector3(0, 26, 9));      // lighthouse
-        keep.Add(new Vector3(3, 8, 4));       // campfire
-
-        // ---- village
-        Transform village = new GameObject("Village").transform;
-        village.SetParent(world, false);
-        MakeHouse(village, new Vector3(-10, 0, 2), 90, wallM, roofM, doorM, windowM, stoneM);
-        MakeHouse(village, new Vector3(10, 0, 0), -90, wallM, roofM, doorM, windowM, stoneM);
-        MakeHouse(village, new Vector3(-9, 0, -8), 90, wallM, roofM, doorM, windowM, stoneM);
-        MakeHouse(village, new Vector3(9, 0, -9), -90, wallM, roofM, doorM, windowM, stoneM);
-        MakeHouse(village, new Vector3(-12, 0, 14), 70, wallM, roofM, doorM, windowM, stoneM);
-        keep.Add(new Vector3(-10, 2, 6));
-        keep.Add(new Vector3(10, 0, 6));
-        keep.Add(new Vector3(-9, -8, 6));
-        keep.Add(new Vector3(9, -9, 6));
-        keep.Add(new Vector3(-12, 14, 6));
-
-        // campfire
-        Transform fire = new GameObject("Campfire").transform;
-        fire.SetParent(world, false);
-        fire.localPosition = new Vector3(3, 0, 8);
-        for (int i = 0; i < 6; i++)
+        // ---- arena
+        Transform arena = new GameObject("Arena").transform;
+        Solid(PrimitiveType.Cube, "Floor", new Vector3(0, -0.5f, 0), new Vector3(Half * 2, 1, Half * 2), floor, arena);
+        for (int i = -5; i <= 5; i++)
         {
-            float a = i * Mathf.PI * 2f / 6f;
-            Solid(PrimitiveType.Sphere, "FireStone", new Vector3(Mathf.Cos(a) * 0.9f, 0.1f, Mathf.Sin(a) * 0.9f),
-                  new Vector3(0.5f, 0.35f, 0.5f), stoneM, fire);
+            Deco(PrimitiveType.Cube, "GridZ", new Vector3(i * 6f, 0.011f, 0), new Vector3(0.1f, 0.02f, Half * 2), nPurple, arena);
+            Deco(PrimitiveType.Cube, "GridX", new Vector3(0, 0.012f, i * 6f), new Vector3(Half * 2, 0.02f, 0.1f), nPurple, arena);
         }
-        Part(PrimitiveType.Sphere, "Flame", new Vector3(0, 0.5f, 0), new Vector3(0.55f, 0.9f, 0.55f), flameM, fire);
-        Light fireLight = AddLight(fire, "FireLight", LightType.Point, new Vector3(0, 1.0f, 0), new Color(1f, 0.6f, 0.25f), 2.2f, 10f, true);
-        fireLight.gameObject.AddComponent<Flicker>();
-
-        // ---- lighthouse
-        Transform lh = new GameObject("Lighthouse").transform;
-        lh.SetParent(world, false);
-        lh.localPosition = new Vector3(0, 0, 26);
-        Solid(PrimitiveType.Cylinder, "Base", new Vector3(0, 0.5f, 0), new Vector3(5.2f, 0.5f, 5.2f), stoneM, lh);
-        Solid(PrimitiveType.Cylinder, "Tower", new Vector3(0, 6f, 0), new Vector3(4f, 6f, 4f), white, lh);
-        Deco(PrimitiveType.Cylinder, "StripeLow", new Vector3(0, 3.2f, 0), new Vector3(4.08f, 0.8f, 4.08f), red, lh);
-        Deco(PrimitiveType.Cylinder, "StripeHigh", new Vector3(0, 7.6f, 0), new Vector3(4.08f, 0.8f, 4.08f), red, lh);
-        Deco(PrimitiveType.Cylinder, "Gallery", new Vector3(0, 12.15f, 0), new Vector3(5f, 0.15f, 5f), stoneM, lh);
-        GameObject lamp = Deco(PrimitiveType.Cylinder, "LampRoom", new Vector3(0, 13.4f, 0), new Vector3(2.6f, 1.1f, 2.6f), lampOff, lh);
-        Deco(PrimitiveType.Sphere, "Cap", new Vector3(0, 14.6f, 0), new Vector3(3.4f, 1.4f, 3.4f), red, lh);
-        Deco(PrimitiveType.Cube, "Door", new Vector3(0, 1.1f, -2.0f), new Vector3(1.3f, 2.2f, 0.15f), doorM, lh);
-
-        GameObject rotor = new GameObject("Rotor");
-        rotor.transform.SetParent(lh, false);
-        rotor.transform.localPosition = new Vector3(0, 13.4f, 0);
-        Light spotA = AddLight(rotor.transform, "BeamA", LightType.Spot, Vector3.zero, new Color(1f, 0.92f, 0.65f), 8f, 120f, false);
-        spotA.spotAngle = 38f;
-        spotA.transform.localRotation = Quaternion.Euler(6, 0, 0);
-        Light spotB = AddLight(rotor.transform, "BeamB", LightType.Spot, Vector3.zero, new Color(1f, 0.92f, 0.65f), 8f, 120f, false);
-        spotB.spotAngle = 38f;
-        spotB.transform.localRotation = Quaternion.Euler(6, 180, 0);
-        Light glow = AddLight(lh, "LampGlow", LightType.Point, new Vector3(0, 13.4f, 0), new Color(1f, 0.85f, 0.5f), 6f, 40f, false);
-
-        Lighthouse lighthouse = lh.gameObject.AddComponent<Lighthouse>();
-        lighthouse.prompt = "Examine";
-        lighthouse.range = 7f;
-        lighthouse.lights = new[] { spotA, spotB, glow };
-        lighthouse.lampRenderer = lamp.GetComponent<Renderer>();
-        lighthouse.lampOn = lampOn;
-        lighthouse.rotor = rotor.transform;
-
-        // ---- fishing boat on the east shore
-        Solid(PrimitiveType.Cube, "BoatHull", new Vector3(31, 0.35f, 3), new Vector3(1.8f, 0.7f, 4.6f), woodM, world, new Vector3(0, 15, 0));
-        Deco(PrimitiveType.Cube, "BoatMast", new Vector3(31, 1.8f, 3), new Vector3(0.12f, 2.4f, 0.12f), woodM, world);
-        keep.Add(new Vector3(31, 3, 4));
-
-        // ---- the three lantern parts
-        Transform items = new GameObject("Items").transform;
-        items.SetParent(world, false);
-
-        Material lensM = Mat("LensGlass", C(0.35f, 0.9f, 1f), true, 0.9f);
-        Material crystalM = Mat("FlameCrystal", C(1f, 0.35f, 0.15f), true, 0.7f);
-        Material mirrorM = Mat("Mirror", C(0.85f, 0.9f, 1f), true, 1f, 0.9f);
-
-        Vector3 lensPos = new Vector3(27, 0, 10);
-        Vector3 crystalPos = new Vector3(-26, 0, 17);
-        Vector3 mirrorPos = new Vector3(9, 0, -33);
-
-        MakeCollectible(items, "Lens", "Lens", lensPos, PrimitiveType.Sphere,
-            new Vector3(0.75f, 0.75f, 0.3f), Vector3.zero, lensM, new Color(0.4f, 0.9f, 1f),
-            new[] { "A great glass lens, wedged between the boulders. Still faintly warm.", "One of three." });
-        MakeCollectible(items, "FlameCrystal", "Flame Crystal", crystalPos, PrimitiveType.Cube,
-            new Vector3(0.55f, 0.55f, 0.55f), new Vector3(45, 45, 0), crystalM, new Color(1f, 0.4f, 0.2f),
-            new[] { "The flame crystal. It hums in my hand, just like the girl said.", "Two to go." });
-        MakeCollectible(items, "Mirror", "Mirror", mirrorPos, PrimitiveType.Cube,
-            new Vector3(0.9f, 1.2f, 0.08f), Vector3.zero, mirrorM, new Color(0.7f, 0.85f, 1f),
-            new[] { "The mirror, half buried in the sand. The tide must have dragged it all the way here." });
-        keep.Add(new Vector3(lensPos.x, lensPos.z, 6));
-        keep.Add(new Vector3(crystalPos.x, crystalPos.z, 3.5f));
-        keep.Add(new Vector3(mirrorPos.x, mirrorPos.z, 5));
-
-        // boulders around the lens
-        for (int i = 0; i < 5; i++)
+        float L = Half * 2 + 2;
+        Solid(PrimitiveType.Cube, "WallN", new Vector3(0, 4, Half + 0.5f), new Vector3(L, 8, 1), wall, arena);
+        Solid(PrimitiveType.Cube, "WallS", new Vector3(0, 4, -Half - 0.5f), new Vector3(L, 8, 1), wall, arena);
+        Solid(PrimitiveType.Cube, "WallE", new Vector3(Half + 0.5f, 4, 0), new Vector3(1, 8, L), wall, arena);
+        Solid(PrimitiveType.Cube, "WallW", new Vector3(-Half - 0.5f, 4, 0), new Vector3(1, 8, L), wall, arena);
+        float[] ys = { 0.1f, 7.85f };
+        foreach (float y in ys)
         {
-            float a = 0.4f + i * 1.1f;
-            Solid(PrimitiveType.Sphere, "Boulder",
-                  new Vector3(lensPos.x + Mathf.Cos(a) * 2.7f, 0.4f, lensPos.z + Mathf.Sin(a) * 2.7f),
-                  new Vector3(2.2f, 1.7f, 2.0f), rockM, world);
+            Deco(PrimitiveType.Cube, "StripN", new Vector3(0, y, Half - 0.02f), new Vector3(Half * 2, 0.15f, 0.1f), nCyan, arena);
+            Deco(PrimitiveType.Cube, "StripS", new Vector3(0, y, -Half + 0.02f), new Vector3(Half * 2, 0.15f, 0.1f), nCyan, arena);
+            Deco(PrimitiveType.Cube, "StripE", new Vector3(Half - 0.02f, y, 0), new Vector3(0.1f, 0.15f, Half * 2), nMag, arena);
+            Deco(PrimitiveType.Cube, "StripW", new Vector3(-Half + 0.02f, y, 0), new Vector3(0.1f, 0.15f, Half * 2), nMag, arena);
         }
 
-        // ---- characters
-        Transform chars = new GameObject("Characters").transform;
-        chars.SetParent(world, false);
-
-        Npc sael = MakeNpc(chars, "Sael", new Vector3(-3, 0, 10), 120, 1f, C(0.25f, 0.3f, 0.55f), C(0.85f, 0.85f, 0.85f), true);
-        sael.givesQuest = true;
-        sael.arriveLines = new[]
+        // cover: x, z, width, depth, height
+        float[,] blocks =
         {
-            "A stranger washed ashore... and on the very night the sea went dark. What do they call you?",
-            "Rian|Rian. What do you mean, the sea went dark?",
-            "The Mira Light. For three hundred years it has guided ships past the Teeth, the rocks beyond our shore. Three nights ago its lens, its flame crystal and its mirror vanished from the lamp room.",
-            "Rian|And you want me to find them.",
-            "I want someone with young legs and stubborn feet. Tobb saw something glowing on the east shore. The child Nim plays in the old forest to the west. And the south beach keeps whatever the tide brings in.",
-            "Bring the parts to the lighthouse itself, to the north. Go, Rian. Quickly."
+            { 0, 0, 6, 6, 0.8f },
+            { 9, 9, 2.5f, 2.5f, 5 }, { -9, 9, 2.5f, 2.5f, 5 }, { 9, -9, 2.5f, 2.5f, 5 }, { -9, -9, 2.5f, 2.5f, 5 },
+            { 0, 14, 10, 1.2f, 3 }, { 0, -14, 10, 1.2f, 3 },
+            { 18, 0, 1.2f, 10, 3 }, { -18, 0, 1.2f, 10, 3 },
+            { 22, 20, 4, 4, 2 }, { -22, -20, 4, 4, 2 }, { 22, -20, 4, 4, 2 }, { -22, 20, 4, 4, 2 }
         };
-        sael.findLines = new[]
+        for (int i = 0; i < blocks.GetLength(0); i++)
         {
-            "The lighthouse stands north, past the village. The lens, the flame crystal, the mirror: find all three.",
-            "Tobb is on the east shore, Nim by the western forest, and the south beach keeps its own secrets."
-        };
-        sael.relightLines = new[]
-        {
-            "You have them all? Then go! Climb to the lamp room and give the sea its light back."
-        };
-        sael.doneLines = new[]
-        {
-            "Look at that... the sea is alive with light again. Thank you, Rian. Mira will remember your name."
-        };
-
-        Npc tobb = MakeNpc(chars, "Tobb", new Vector3(21, 0, 5), -70, 1f, C(0.2f, 0.4f, 0.35f), C(0.3f, 0.2f, 0.12f), false);
-        tobb.arriveLines = new[]
-        {
-            "Mind the nets, stranger. Sael will be wanting a word with you. She always does."
-        };
-        tobb.findLines = new[]
-        {
-            "I saw a strange glow in the rocks just east of here, past the big boulders. Bright as a star.",
-            "The lens, if I had to bet. Go and see for yourself."
-        };
-        tobb.relightLines = new[]
-        {
-            "You found them all? Then what are you doing talking to me? Go!"
-        };
-        tobb.doneLines = new[]
-        {
-            "First night in years the fish are rising under that beam. Good work."
-        };
-
-        Npc nim = MakeNpc(chars, "Nim", new Vector3(-15, 0, 9), 80, 0.7f, C(0.75f, 0.35f, 0.3f), C(0.15f, 0.1f, 0.05f), false);
-        nim.arriveLines = new[]
-        {
-            "You're new! Are you going to fix the light? Everyone says somebody will."
-        };
-        nim.findLines = new[]
-        {
-            "I saw a red stone shining deep in the forest, west of here. I was too scared to touch it.",
-            "It hums. Like it's alive."
-        };
-        nim.relightLines = new[]
-        {
-            "You have all the pieces? Hurry! I want to see it shine!"
-        };
-        nim.doneLines = new[]
-        {
-            "It's so bright! I can see it from my bed. Thank you!"
-        };
-        keep.Add(new Vector3(-3, 10, 4));
-        keep.Add(new Vector3(21, 5, 4));
-        keep.Add(new Vector3(-15, 9, 4));
-
-        // ---- trees and rocks
-        Transform nature = new GameObject("Nature").transform;
-        nature.SetParent(world, false);
-        System.Random rng = new System.Random(11);
-        int placed = 0, tries = 0;
-        while (placed < 85 && tries < 2000)
-        {
-            tries++;
-            double ang = rng.NextDouble() * System.Math.PI * 2.0;
-            double rad = 6.0 + rng.NextDouble() * 30.0;
-            float x = (float)(System.Math.Cos(ang) * rad);
-            float z = (float)(System.Math.Sin(ang) * rad);
-            if (Blocked(keep, x, z)) continue;
-            float s = 0.8f + (float)rng.NextDouble() * 0.7f;
-            MakeTree(nature, new Vector3(x, 0, z), s, trunkM, leafM, leaf2M);
-            placed++;
-        }
-        // denser forest around the crystal
-        for (int i = 0; i < 16; i++)
-        {
-            double ang = rng.NextDouble() * System.Math.PI * 2.0;
-            double rad = 5.0 + rng.NextDouble() * 7.0;
-            float x = crystalPos.x + (float)(System.Math.Cos(ang) * rad);
-            float z = crystalPos.z + (float)(System.Math.Sin(ang) * rad);
-            if (new Vector2(x, z).magnitude > 36f || Blocked(keep, x, z)) continue;
-            MakeTree(nature, new Vector3(x, 0, z), 0.9f + (float)rng.NextDouble() * 0.7f, trunkM, leafM, leaf2M);
-        }
-        // scattered rocks
-        for (int i = 0; i < 30; i++)
-        {
-            double ang = rng.NextDouble() * System.Math.PI * 2.0;
-            double rad = 4.0 + rng.NextDouble() * 33.0;
-            float x = (float)(System.Math.Cos(ang) * rad);
-            float z = (float)(System.Math.Sin(ang) * rad);
-            if (Blocked(keep, x, z)) continue;
-            float s = 0.5f + (float)rng.NextDouble() * 1.0f;
-            Solid(PrimitiveType.Sphere, "Rock", new Vector3(x, s * 0.15f, z), new Vector3(s * 1.3f, s * 0.8f, s), rockM, nature);
+            float x = blocks[i, 0], z = blocks[i, 1], w = blocks[i, 2], d = blocks[i, 3], h = blocks[i, 4];
+            Solid(PrimitiveType.Cube, "Cover" + i, new Vector3(x, h / 2f, z), new Vector3(w, h, d), cover, arena);
+            Deco(PrimitiveType.Cube, "Cap" + i, new Vector3(x, h + 0.03f, z), new Vector3(w + 0.1f, 0.06f, d + 0.1f),
+                 (i % 2 == 0) ? nCyan : nMag, arena);
         }
 
-        // ---- player
-        GameObject player = new GameObject("Player");
-        player.transform.position = spawn;
-        CharacterController cc = player.AddComponent<CharacterController>();
-        cc.height = 1.8f; cc.radius = 0.35f; cc.center = new Vector3(0, 0.9f, 0);
-        cc.slopeLimit = 45f; cc.stepOffset = 0.4f;
-        Material coat = Mat("PlayerCoat", C(0.7f, 0.5f, 0.2f));
-        Material pack = Mat("PlayerPack", C(0.35f, 0.22f, 0.12f));
-        Material skinM = Mat("Skin", C(0.87f, 0.68f, 0.55f));
-        Material hairD = Mat("Hair_Rian", C(0.12f, 0.08f, 0.05f));
-        Material darkM = Mat("Dark", C(0.05f, 0.05f, 0.05f));
-        Part(PrimitiveType.Capsule, "Body", new Vector3(0, 0.9f, 0), new Vector3(0.7f, 0.8f, 0.7f), coat, player.transform);
-        Part(PrimitiveType.Sphere, "Head", new Vector3(0, 1.75f, 0), new Vector3(0.38f, 0.38f, 0.38f), skinM, player.transform);
-        Part(PrimitiveType.Sphere, "Hair", new Vector3(0, 1.86f, -0.03f), new Vector3(0.42f, 0.28f, 0.42f), hairD, player.transform);
-        Part(PrimitiveType.Sphere, "EyeL", new Vector3(-0.07f, 1.78f, 0.17f), new Vector3(0.06f, 0.06f, 0.06f), darkM, player.transform);
-        Part(PrimitiveType.Sphere, "EyeR", new Vector3(0.07f, 1.78f, 0.17f), new Vector3(0.06f, 0.06f, 0.06f), darkM, player.transform);
-        Part(PrimitiveType.Cube, "Backpack", new Vector3(0, 1.0f, -0.32f), new Vector3(0.45f, 0.55f, 0.22f), pack, player.transform);
-        PlayerController pc = player.AddComponent<PlayerController>();
-        tpc.target = player.transform;
-        tpc.yaw = 0f;
-        pc.cam = cam.transform;
+        AddLight(arena, "LightA", LightType.Point, new Vector3(-24, 5, -24), Cyan, 2.5f, 38f, true);
+        AddLight(arena, "LightB", LightType.Point, new Vector3(24, 5, 24), Magenta, 2.5f, 38f, true);
+        AddLight(arena, "LightC", LightType.Point, new Vector3(24, 5, -24), new Color(0.6f, 0.3f, 1f), 2f, 38f, true);
+        AddLight(arena, "LightD", LightType.Point, new Vector3(-24, 5, 24), new Color(0.6f, 0.3f, 1f), 2f, 38f, true);
+        AddLight(arena, "LightCenter", LightType.Point, new Vector3(0, 6, 0), Color.white, 1.2f, 30f, true);
+
+        // ---- spawns
+        Transform[] sp0 = new Transform[3];
+        Transform[] sp1 = new Transform[3];
+        float[] sx = { -8f, 0f, 8f };
+        for (int i = 0; i < 3; i++)
+        {
+            GameObject a = new GameObject("SpawnBlue" + i);
+            a.transform.SetParent(arena, false);
+            a.transform.position = new Vector3(sx[i], 0.05f, -25f);
+            a.transform.rotation = Quaternion.Euler(0, 0, 0);
+            sp0[i] = a.transform;
+            GameObject b = new GameObject("SpawnRed" + i);
+            b.transform.SetParent(arena, false);
+            b.transform.position = new Vector3(sx[i], 0.05f, 25f);
+            b.transform.rotation = Quaternion.Euler(0, 180, 0);
+            sp1[i] = b.transform;
+        }
+
+        // ---- units
+        List<Combatant> all = new List<Combatant>();
+        Combatant pl = MakeUnit("You", 0, sp0[1].position, 0f, true, teamBlue, visorMat, all);
+        MakeUnit("Rex", 0, sp0[0].position, 0f, false, teamBlue, visorMat, all);
+        MakeUnit("Nova", 0, sp0[2].position, 0f, false, teamBlue, visorMat, all);
+        MakeUnit("Vex", 1, sp1[0].position, 180f, false, teamRed, visorMat, all);
+        MakeUnit("Kane", 1, sp1[1].position, 180f, false, teamRed, visorMat, all);
+        MakeUnit("Ghost", 1, sp1[2].position, 180f, false, teamRed, visorMat, all);
+
+        // ---- player rig: camera + weapon
+        cam.transform.SetParent(pl.eye, false);
+        cam.transform.localPosition = Vector3.zero;
+        cam.transform.localRotation = Quaternion.identity;
+
+        GameObject gun = new GameObject("Weapon");
+        gun.transform.SetParent(cam.transform, false);
+        gun.transform.localPosition = new Vector3(0.24f, -0.22f, 0.5f);
+        Part(PrimitiveType.Cube, "GunBody", new Vector3(0, 0, 0), new Vector3(0.08f, 0.1f, 0.5f), gunDark, gun.transform);
+        Part(PrimitiveType.Cube, "GunGlow", new Vector3(0, 0.055f, 0.02f), new Vector3(0.05f, 0.015f, 0.42f), nCyan, gun.transform);
+        Part(PrimitiveType.Cube, "GunGrip", new Vector3(0, -0.1f, -0.12f), new Vector3(0.07f, 0.14f, 0.09f), gunDark, gun.transform, new Vector3(15, 0, 0));
+        GameObject muzzle = new GameObject("Muzzle");
+        muzzle.transform.SetParent(gun.transform, false);
+        muzzle.transform.localPosition = new Vector3(0, 0.02f, 0.32f);
+        Light flash = AddLight(muzzle.transform, "Flash", LightType.Point, Vector3.zero, new Color(1f, 0.9f, 0.5f), 3f, 8f, false);
+
+        FpsPlayer fps = pl.gameObject.AddComponent<FpsPlayer>();
+        WeaponController wc = pl.gameObject.AddComponent<WeaponController>();
+        wc.cam = cam.transform; wc.owner = pl; wc.player = fps; wc.muzzle = muzzle.transform;
+        wc.flash = flash; wc.model = gun.transform;
+        fps.cam = cam.transform; fps.weapon = wc;
 
         // ---- UI
         Sprite knob = AssetDatabase.GetBuiltinExtraResource<Sprite>("UI/Skin/Knob.psd");
@@ -537,108 +340,132 @@ public static class SceneBuilder
         if (Object.FindObjectOfType<EventSystem>() == null)
             new GameObject("EventSystem", typeof(EventSystem), typeof(StandaloneInputModule));
 
-        // look area (right side), joystick, interact button
+        // aim area (behind everything else)
         Image lookImg = MakeImage(ct, "LookArea", new Color(0, 0, 0, 0));
-        Stretch(lookImg.transform, new Vector2(0.35f, 0), new Vector2(1, 1), Vector2.zero, Vector2.zero);
+        Stretch(lookImg.transform, new Vector2(0.3f, 0), new Vector2(1, 1), Vector2.zero, Vector2.zero);
         TouchLook look = lookImg.gameObject.AddComponent<TouchLook>();
-        look.cam = tpc;
+        look.player = fps;
 
-        Image jbg = MakeImage(ct, "Joystick", new Color(1, 1, 1, 0.15f), knob);
-        Fixed(jbg.transform, new Vector2(0, 0), new Vector2(0.5f, 0.5f), new Vector2(260, 260), new Vector2(320, 320));
+        Image hurt = MakeImage(ct, "Hurt", new Color(1, 0, 0, 0), null, false, false);
+        Stretch(hurt.transform, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
+
+        GameObject safe = new GameObject("Safe", typeof(RectTransform));
+        safe.transform.SetParent(ct, false);
+        Stretch(safe.transform, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
+        safe.AddComponent<SafeArea>();
+        Transform st = safe.transform;
+
+        // crosshair
+        Vector2 mid = new Vector2(0.5f, 0.5f);
+        Color cross = new Color(1, 1, 1, 0.9f);
+        Fixed(MakeImage(st, "CrossL", cross, null, false, false).transform, mid, mid, new Vector2(-18, 0), new Vector2(16, 3));
+        Fixed(MakeImage(st, "CrossR", cross, null, false, false).transform, mid, mid, new Vector2(18, 0), new Vector2(16, 3));
+        Fixed(MakeImage(st, "CrossU", cross, null, false, false).transform, mid, mid, new Vector2(0, 18), new Vector2(3, 16));
+        Fixed(MakeImage(st, "CrossD", cross, null, false, false).transform, mid, mid, new Vector2(0, -18), new Vector2(3, 16));
+
+        // hit marker
+        GameObject hm = new GameObject("HitMarker", typeof(RectTransform));
+        hm.transform.SetParent(st, false);
+        Fixed(hm.transform, mid, mid, Vector2.zero, new Vector2(60, 60));
+        Image h1 = MakeImage(hm.transform, "A", new Color(1, 0.3f, 0.3f, 1), null, false, false);
+        Fixed(h1.transform, mid, mid, Vector2.zero, new Vector2(46, 5));
+        h1.transform.localRotation = Quaternion.Euler(0, 0, 45);
+        Image h2 = MakeImage(hm.transform, "B", new Color(1, 0.3f, 0.3f, 1), null, false, false);
+        Fixed(h2.transform, mid, mid, Vector2.zero, new Vector2(46, 5));
+        h2.transform.localRotation = Quaternion.Euler(0, 0, -45);
+
+        // joystick
+        Image jbg = MakeImage(st, "Joystick", new Color(1, 1, 1, 0.15f), knob);
+        Fixed(jbg.transform, Vector2.zero, mid, new Vector2(250, 270), new Vector2(320, 320));
         Image jh = MakeImage(jbg.transform, "Handle", new Color(1, 1, 1, 0.45f), knob, false, false);
-        Fixed(jh.transform, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(140, 140));
+        Fixed(jh.transform, mid, mid, Vector2.zero, new Vector2(140, 140));
         VirtualJoystick joy = jbg.gameObject.AddComponent<VirtualJoystick>();
         joy.background = (RectTransform)jbg.transform;
         joy.handle = (RectTransform)jh.transform;
         joy.radius = 110f;
-        pc.joystick = joy;
+        fps.joystick = joy;
 
-        Image ib = MakeImage(ct, "InteractButton", new Color(0.96f, 0.76f, 0.25f, 0.95f), round, true);
-        Fixed(ib.transform, new Vector2(1, 0), new Vector2(1, 0), new Vector2(-80, 420), new Vector2(300, 120));
-        Button ibBtn = ib.gameObject.AddComponent<Button>();
-        ibBtn.targetGraphic = ib;
-        Text ibLabel = MakeText(ib.transform, "Label", "Talk", 46, TextAnchor.MiddleCenter, new Color(0.15f, 0.1f, 0.05f), FontStyle.Bold);
-        Stretch(ibLabel.transform, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
-        ib.gameObject.SetActive(false);
-        pc.interactButton = ibBtn;
-        pc.interactLabel = ibLabel;
+        // buttons (right side)
+        Vector2 br = new Vector2(1, 0);
+        Image fire = MakeImage(st, "FireButton", new Color(1f, 0.2f, 0.4f, 0.55f), knob);
+        Fixed(fire.transform, br, mid, new Vector2(-250, 290), new Vector2(250, 250));
+        fps.fireButton = fire.gameObject.AddComponent<HoldButton>();
+        Text fl = MakeText(fire.transform, "Label", "FIRE", 44, TextAnchor.MiddleCenter, Color.white, FontStyle.Bold);
+        Stretch(fl.transform, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
 
-        // HUD
-        Text objective = MakeText(ct, "Objective", "", 36, TextAnchor.UpperLeft, Color.white, FontStyle.Bold);
-        Fixed(objective.transform, new Vector2(0, 1), new Vector2(0, 1), new Vector2(40, -30), new Vector2(1000, 60));
-        Text partsT = MakeText(ct, "Parts", "", 36, TextAnchor.UpperRight, new Color(1f, 0.85f, 0.4f), FontStyle.Bold);
-        Fixed(partsT.transform, new Vector2(1, 1), new Vector2(1, 1), new Vector2(-40, -30), new Vector2(500, 60));
+        Image jump = MakeImage(st, "JumpButton", new Color(0.1f, 0.8f, 1f, 0.45f), knob);
+        Fixed(jump.transform, br, mid, new Vector2(-520, 190), new Vector2(170, 170));
+        fps.jumpButton = jump.gameObject.AddComponent<Button>();
+        fps.jumpButton.targetGraphic = jump;
+        Text jl = MakeText(jump.transform, "Label", "JUMP", 32, TextAnchor.MiddleCenter, Color.white, FontStyle.Bold);
+        Stretch(jl.transform, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
 
-        // dialogue
-        Image dp = MakeImage(ct, "DialoguePanel", new Color(0.05f, 0.07f, 0.12f, 0.9f), round, true);
-        Stretch(dp.transform, new Vector2(0.08f, 0), new Vector2(0.92f, 0), new Vector2(0, 40), new Vector2(0, 330));
-        Button dBtn = dp.gameObject.AddComponent<Button>();
-        dBtn.transition = Selectable.Transition.None;
-        dBtn.targetGraphic = dp;
-        Text speaker = MakeText(dp.transform, "Speaker", "", 44, TextAnchor.UpperLeft, new Color(1f, 0.82f, 0.35f), FontStyle.Bold);
-        Stretch(speaker.transform, new Vector2(0, 1), new Vector2(1, 1), new Vector2(45, -75), new Vector2(-45, -18));
-        Text body = MakeText(dp.transform, "Body", "", 40, TextAnchor.UpperLeft, Color.white);
-        Stretch(body.transform, new Vector2(0, 0), new Vector2(1, 1), new Vector2(45, 50), new Vector2(-45, -85));
-        Text hint = MakeText(dp.transform, "Hint", "tap to continue", 28, TextAnchor.LowerRight, new Color(0.7f, 0.75f, 0.85f));
-        Stretch(hint.transform, new Vector2(0, 0), new Vector2(1, 0), new Vector2(45, 10), new Vector2(-45, 48));
-        dp.gameObject.SetActive(false);
+        Image rel = MakeImage(st, "ReloadButton", new Color(1f, 0.85f, 0.2f, 0.45f), knob);
+        Fixed(rel.transform, br, mid, new Vector2(-110, 560), new Vector2(150, 150));
+        fps.reloadButton = rel.gameObject.AddComponent<Button>();
+        fps.reloadButton.targetGraphic = rel;
+        Text rl = MakeText(rel.transform, "Label", "RELOAD", 26, TextAnchor.MiddleCenter, Color.white, FontStyle.Bold);
+        Stretch(rl.transform, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
 
-        // fade + title card
-        Image fade = MakeImage(ct, "Fade", Color.black, null, false, false);
-        Stretch(fade.transform, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
-        Text title = MakeText(ct, "Title", "", 84, TextAnchor.MiddleCenter, Color.white, FontStyle.Bold);
-        Fixed(title.transform, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(1600, 400));
+        // HUD text
+        Text ammo = MakeText(st, "Ammo", "30 / 30", 60, TextAnchor.MiddleRight, Color.white, FontStyle.Bold);
+        Fixed(ammo.transform, br, br, new Vector2(-50, 30), new Vector2(480, 100));
+
+        Image hbg = MakeImage(st, "HealthBack", new Color(0, 0, 0, 0.55f), round, true, false);
+        Fixed(hbg.transform, Vector2.zero, Vector2.zero, new Vector2(60, 40), new Vector2(440, 44));
+        Image hfill = MakeImage(hbg.transform, "Fill", new Color(0.2f, 1f, 0.6f), round, false, false);
+        hfill.type = Image.Type.Filled;
+        hfill.fillMethod = Image.FillMethod.Horizontal;
+        hfill.fillOrigin = 0;
+        Stretch(hfill.transform, Vector2.zero, Vector2.one, new Vector2(4, 4), new Vector2(-4, -4));
+        Text htext = MakeText(hbg.transform, "Text", "100", 30, TextAnchor.MiddleCenter, Color.white, FontStyle.Bold);
+        Stretch(htext.transform, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
+
+        Vector2 tc = new Vector2(0.5f, 1f);
+        Text timer = MakeText(st, "Timer", "3:00", 60, TextAnchor.MiddleCenter, Color.white, FontStyle.Bold);
+        Fixed(timer.transform, tc, tc, new Vector2(0, -20), new Vector2(260, 80));
+        Text sBlue = MakeText(st, "ScoreBlue", "0", 56, TextAnchor.MiddleCenter, new Color(0.3f, 0.9f, 1f), FontStyle.Bold);
+        Fixed(sBlue.transform, tc, tc, new Vector2(-210, -22), new Vector2(160, 76));
+        Text sRed = MakeText(st, "ScoreRed", "0", 56, TextAnchor.MiddleCenter, new Color(1f, 0.3f, 0.6f), FontStyle.Bold);
+        Fixed(sRed.transform, tc, tc, new Vector2(210, -22), new Vector2(160, 76));
+
+        Vector2 tr = new Vector2(1f, 1f);
+        Text feed = MakeText(st, "KillFeed", "", 30, TextAnchor.UpperRight, Color.white, FontStyle.Bold);
+        Fixed(feed.transform, tr, tr, new Vector2(-30, -24), new Vector2(560, 180));
+
+        Text center = MakeText(st, "Center", "", 80, TextAnchor.MiddleCenter, Color.white, FontStyle.Bold);
+        Fixed(center.transform, mid, mid, new Vector2(0, 200), new Vector2(1300, 140));
 
         // end panel
         Image endImg = MakeImage(ct, "EndPanel", new Color(0, 0, 0, 0.78f));
         Stretch(endImg.transform, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
-        Text endTitle = MakeText(endImg.transform, "EndTitle", "THE LAST LIGHT", 96, TextAnchor.MiddleCenter, new Color(1f, 0.85f, 0.4f), FontStyle.Bold);
-        Fixed(endTitle.transform, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0, 170), new Vector2(1600, 200));
-        Text endSub = MakeText(endImg.transform, "EndSub", "Chapter 1 complete\nThank you for playing.", 46, TextAnchor.MiddleCenter, Color.white);
-        Fixed(endSub.transform, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(1400, 200));
-        Image rb = MakeImage(endImg.transform, "RestartButton", new Color(0.96f, 0.76f, 0.25f, 1f), round, true);
-        Fixed(rb.transform, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0, -220), new Vector2(420, 120));
+        Text endTitle = MakeText(endImg.transform, "Title", "VICTORY", 120, TextAnchor.MiddleCenter, Color.white, FontStyle.Bold);
+        Fixed(endTitle.transform, mid, mid, new Vector2(0, 170), new Vector2(1300, 180));
+        Text endScore = MakeText(endImg.transform, "Score", "0 - 0", 80, TextAnchor.MiddleCenter, new Color(0.8f, 0.9f, 1f), FontStyle.Bold);
+        Fixed(endScore.transform, mid, mid, new Vector2(0, 30), new Vector2(900, 120));
+        Image rb = MakeImage(endImg.transform, "Restart", new Color(0.1f, 0.85f, 1f, 0.95f), round, true);
+        Fixed(rb.transform, mid, mid, new Vector2(0, -150), new Vector2(460, 130));
         Button rbBtn = rb.gameObject.AddComponent<Button>();
         rbBtn.targetGraphic = rb;
-        Text rbLabel = MakeText(rb.transform, "Label", "Play again", 44, TextAnchor.MiddleCenter, new Color(0.15f, 0.1f, 0.05f), FontStyle.Bold);
-        Stretch(rbLabel.transform, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
-        endImg.gameObject.SetActive(false);
+        Text rbl = MakeText(rb.transform, "Label", "Play again", 50, TextAnchor.MiddleCenter, new Color(0.05f, 0.05f, 0.15f), FontStyle.Bold);
+        Stretch(rbl.transform, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
 
-        // ---- game object that holds the logic
+        // ---- match logic
         GameObject game = new GameObject("Game");
-        DialogueUI dui = game.AddComponent<DialogueUI>();
-        dui.panel = dp.gameObject;
-        dui.speakerText = speaker;
-        dui.bodyText = body;
-        dui.nextButton = dBtn;
+        MatchManager mm = game.AddComponent<MatchManager>();
+        mm.all = all;
+        mm.spawns0 = sp0; mm.spawns1 = sp1;
+        mm.player = pl; mm.weapon = wc; mm.fps = fps;
+        mm.timerText = timer; mm.scoreBlue = sBlue; mm.scoreRed = sRed;
+        mm.ammoText = ammo; mm.healthText = htext; mm.centerText = center; mm.feedText = feed;
+        mm.endTitle = endTitle; mm.endScore = endScore;
+        mm.healthFill = hfill; mm.hurtOverlay = hurt;
+        mm.hitMarker = hm; mm.endPanel = endImg.gameObject; mm.restartButton = rbBtn;
 
-        GameManager gm = game.AddComponent<GameManager>();
-        gm.player = player.transform;
-        gm.dialogue = dui;
-        gm.objectiveText = objective;
-        gm.partsText = partsT;
-        gm.titleText = title;
-        gm.fade = fade;
-        gm.endPanel = endImg.gameObject;
-        gm.restartButton = rbBtn;
-
-        // ---- save
         EditorSceneManager.SaveScene(scene, ScenePath);
         EditorBuildSettings.scenes = new[] { new EditorBuildSettingsScene(ScenePath, true) };
         AssetDatabase.SaveAssets();
         AssetDatabase.Refresh();
-        Debug.Log("Main scene built: " + ScenePath);
-    }
-
-    // keep list entries are Vector3(x, z, radius); the path down the middle is also kept clear
-    static bool Blocked(List<Vector3> keep, float x, float z)
-    {
-        if (Mathf.Abs(x) < 3f && z > -17f && z < 24f) return true;
-        foreach (Vector3 k in keep)
-        {
-            float dx = x - k.x, dz = z - k.y;
-            if (dx * dx + dz * dz < k.z * k.z) return true;
-        }
-        return false;
+        Debug.Log("Neon Arena scene built: " + ScenePath);
     }
 }

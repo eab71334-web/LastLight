@@ -1,14 +1,14 @@
 using UnityEngine;
 using UnityEngine.EventSystems;
 
-/// <summary>Drag anywhere on this area to rotate the camera.</summary>
+/// <summary>Drag anywhere on this area to aim.</summary>
 public class TouchLook : MonoBehaviour, IDragHandler
 {
-    public ThirdPersonCamera cam;
-    public float sensitivity = 0.14f;
+    public FpsPlayer player;
+    public float sensitivity = 0.16f;
 
     public void OnDrag(PointerEventData e)
     {
-        if (cam != null) cam.AddLook(e.delta.x * sensitivity, e.delta.y * sensitivity);
+        if (player != null) player.AddLook(e.delta.x * sensitivity, e.delta.y * sensitivity);
     }
 }

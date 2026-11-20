@@ -1,35 +1,19 @@
-# The Last Light (Unity 3D story game)
+# Neon Arena (Unity 3D, first-person team deathmatch)
 
-Chapter 1 of a story-driven 3D adventure for Android and iPhone.
-You wash ashore on the island of Mira. Its lighthouse has gone dark. Find the lens,
-the flame crystal and the mirror, then relight the Mira Light.
+Mobile first-person arena shooter for Android (iPhone later). Version 1 is offline: you and 2 bot allies
+(blue) against 3 bot enemies (red). First team to 20 kills or the most kills after 3 minutes wins.
+
+## Controls
+Left stick = move, drag the right side = aim, FIRE (hold), JUMP, RELOAD.
+Editor: WASD, right mouse = look, F = fire, Space = jump, R = reload.
 
 ## How the project works
+- Everything is code. `Assets/Editor/SceneBuilder.cs` builds the arena, units and HUD (menu **Neon > Rebuild Main Scene**).
+- `Assets/Editor/AutoBuildScene.cs` generates the scene automatically on the cloud builder.
+- Gameplay: `Assets/Scripts` (Combatant, FpsPlayer, WeaponController, BotAI, MatchManager, HUD helpers).
+- Build on Unity Build Automation (cloud.unity.com) -> Default Android.
 
-- Everything is code. `Assets/Editor/SceneBuilder.cs` builds the island, village, lighthouse,
-  characters and UI. Menu: **Story > Rebuild Main Scene** (in Unity), or automatically in CI.
-- `Assets/Editor/BuildScript.cs` is the CI entry point (Android APK, iOS project).
-- Gameplay scripts are in `Assets/Scripts`.
-- Controls: left stick to walk, drag the right side to look, button to talk/take.
-  In the editor: WASD, right mouse button to look, E to interact, Space to continue dialogue.
+## Next
+Online play (Netcode + Relay), more maps and weapons, minimap, player progression.
 
-## Building on GitHub
-
-1. Get a Unity Personal license file (`.ulf`) on a computer with Unity Hub:
-   Hub > Preferences > Licenses > Add > Personal. The file is then at
-   - Windows: `C:\ProgramData\Unity\Unity_lic.ulf`
-   - Mac: `/Library/Application Support/Unity/Unity_lic.ulf`
-   - Linux: `~/.local/share/unity3d/Unity/Unity_lic.ulf`
-2. Add repository secrets: `UNITY_LICENSE` (full contents of the `.ulf`), `UNITY_EMAIL`, `UNITY_PASSWORD`.
-   See https://game.ci/docs/github/activation (the old `.alf` request action is no longer supported).
-3. Actions > **Build Game** > Run workflow.
-4. Artifacts: `LastLight-Android-APK` (installable, debug-signed) and `LastLight-iOS-IPA` (unsigned,
-   needs sideloading/re-signing).
-
-The Unity version lives in `ProjectSettings/ProjectVersion.txt` (the workflow reads it with `unityVersion: auto`).
-
-## Next steps
-
-- Replace the primitive shapes with real models and animations (Assets/Models), keep the scene builder as the layout.
-- Chapters 2+, more NPCs, choices, music and sound effects.
-- Arabic text needs a font and a text-shaping package (the built-in UI text does not join Arabic letters).
+The old story game "The Last Light" (Chapter 1) is kept in git history (tag `lastlight-ch1`).

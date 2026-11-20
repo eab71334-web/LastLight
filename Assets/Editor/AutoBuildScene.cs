@@ -39,3 +39,15 @@ public static class AutoBuildScene
         }
     }
 }
+
+/// <summary>Re-applies the mobile settings right before the player is built (the cloud builder may reset them).</summary>
+public class PreBuildSettings : UnityEditor.Build.IPreprocessBuildWithReport
+{
+    public int callbackOrder { get { return 0; } }
+
+    public void OnPreprocessBuild(UnityEditor.Build.Reporting.BuildReport report)
+    {
+        BuildScript.ApplySettings();
+        if (report.summary.platform == BuildTarget.Android) BuildScript.ApplyAndroidSettings();
+    }
+}
