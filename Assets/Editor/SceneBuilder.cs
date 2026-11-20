@@ -310,6 +310,7 @@ public static class SceneBuilder
         GameObject gun = new GameObject("Weapon");
         gun.transform.SetParent(cam.transform, false);
         gun.transform.localPosition = new Vector3(0.24f, -0.22f, 0.5f);
+        gun.transform.localScale = new Vector3(0.72f, 0.72f, 0.72f);
         Part(PrimitiveType.Cube, "GunBody", new Vector3(0, 0, 0), new Vector3(0.08f, 0.1f, 0.5f), gunDark, gun.transform);
         Part(PrimitiveType.Cube, "GunGlow", new Vector3(0, 0.055f, 0.02f), new Vector3(0.05f, 0.015f, 0.42f), nCyan, gun.transform);
         Part(PrimitiveType.Cube, "GunGrip", new Vector3(0, -0.1f, -0.12f), new Vector3(0.07f, 0.14f, 0.09f), gunDark, gun.transform, new Vector3(15, 0, 0));
@@ -401,7 +402,7 @@ public static class SceneBuilder
         Stretch(jl.transform, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
 
         Image rel = MakeImage(st, "ReloadButton", new Color(1f, 0.85f, 0.2f, 0.45f), knob);
-        Fixed(rel.transform, br, mid, new Vector2(-110, 560), new Vector2(150, 150));
+        Fixed(rel.transform, br, mid, new Vector2(-380, 330), new Vector2(130, 130));
         fps.reloadButton = rel.gameObject.AddComponent<Button>();
         fps.reloadButton.targetGraphic = rel;
         Text rl = MakeText(rel.transform, "Label", "RELOAD", 26, TextAnchor.MiddleCenter, Color.white, FontStyle.Bold);
