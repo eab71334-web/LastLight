@@ -36,11 +36,7 @@ public static class BuildScript
         {
             Directory.CreateDirectory(path);
             location = Path.Combine(path, buildName + ".apk");
-            EditorUserBuildSettings.buildAppBundle = false;
-            PlayerSettings.SetApplicationIdentifier(NamedBuildTarget.Android, "com.lastlight.game");
-            PlayerSettings.SetScriptingBackend(NamedBuildTarget.Android, ScriptingImplementation.IL2CPP);
-            PlayerSettings.Android.targetArchitectures = AndroidArchitecture.ARM64;
-            PlayerSettings.Android.minSdkVersion = AndroidSdkVersions.AndroidApiLevel24;
+            ApplyAndroidSettings();
         }
         else if (target == BuildTarget.iOS)
         {
@@ -68,7 +64,16 @@ public static class BuildScript
             EditorApplication.Exit(1);
     }
 
-    static void ApplySettings()
+    public static void ApplyAndroidSettings()
+    {
+        EditorUserBuildSettings.buildAppBundle = false;
+        PlayerSettings.SetApplicationIdentifier(NamedBuildTarget.Android, "com.lastlight.game");
+        PlayerSettings.SetScriptingBackend(NamedBuildTarget.Android, ScriptingImplementation.IL2CPP);
+        PlayerSettings.Android.targetArchitectures = AndroidArchitecture.ARM64;
+        PlayerSettings.Android.minSdkVersion = AndroidSdkVersions.AndroidApiLevel24;
+    }
+
+    public static void ApplySettings()
     {
         PlayerSettings.companyName = "LastLight";
         PlayerSettings.productName = ProductName;
