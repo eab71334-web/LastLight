@@ -15,10 +15,15 @@ the flame crystal and the mirror, then relight the Mira Light.
 
 ## Building on GitHub
 
-1. Add repository secrets: `UNITY_LICENSE`, `UNITY_EMAIL`, `UNITY_PASSWORD`
-   (see https://game.ci/docs/github/activation). `activation.yml` produces the `.alf` request file.
-2. Actions > **Build Game** > Run workflow.
-3. Artifacts: `LastLight-Android-APK` (installable, debug-signed) and `LastLight-iOS-IPA` (unsigned,
+1. Get a Unity Personal license file (`.ulf`) on a computer with Unity Hub:
+   Hub > Preferences > Licenses > Add > Personal. The file is then at
+   - Windows: `C:\ProgramData\Unity\Unity_lic.ulf`
+   - Mac: `/Library/Application Support/Unity/Unity_lic.ulf`
+   - Linux: `~/.local/share/unity3d/Unity/Unity_lic.ulf`
+2. Add repository secrets: `UNITY_LICENSE` (full contents of the `.ulf`), `UNITY_EMAIL`, `UNITY_PASSWORD`.
+   See https://game.ci/docs/github/activation (the old `.alf` request action is no longer supported).
+3. Actions > **Build Game** > Run workflow.
+4. Artifacts: `LastLight-Android-APK` (installable, debug-signed) and `LastLight-iOS-IPA` (unsigned,
    needs sideloading/re-signing).
 
 The Unity version lives in `ProjectSettings/ProjectVersion.txt` (the workflow reads it with `unityVersion: auto`).
