@@ -17,3 +17,14 @@ Editor: WASD, J jab, K cross, hold L to block.
 Online bouts (winner stays, spectators bet and throw items), more cards, more arenas.
 
 Earlier games stay in git history: tags `lastlight-ch1` (The Last Light) and the Neon Arena commits.
+
+## Realistic boxer (opponent)
+
+The opponent is a skinned human (MakeHuman CC0 base mesh, 53 bones) with brand-new boxing animations:
+idle, shuffle, jab, cross, block, block_hit, hit, hit2, hit_body, stagger, ko, win.
+No importer package is needed: `Assets/Resources/Boxer/boxer.bytes` is read by `Assets/Scripts/BoxerRig.cs`,
+which builds the SkinnedMeshRenderer and plays the clips at runtime. If the file fails to load, the old primitive body is shown.
+
+Regenerate with `python3 tools/boxer/export.py Assets/Resources/Boxer/boxer.bytes`
+(needs numpy and the Sabak-Engine file `assets/human.bin`; change `SRC` in `tools/boxer/build_char.py`).
+Edit poses/clips in `tools/boxer/poses.py` and `tools/boxer/anims.py`; `tools/boxer/render.py` draws contact sheets to check them.

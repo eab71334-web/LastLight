@@ -127,6 +127,8 @@ public class BoutManager : MonoBehaviour
         botAI.aggression = d.agg; botAI.reaction = d.react;
         foreach (Renderer r in botSkin) r.material.color = d.skin;
         foreach (Renderer r in botShorts) r.material.color = d.shorts;
+        BoxerRig br = bot.GetComponent<BoxerRig>();
+        if (br != null) br.Tint(d.skin, d.shorts, Color.Lerp(d.shorts, Color.black, 0.55f));
 
         float keep = i == 0 ? player.maxHp : Mathf.Min(player.maxHp, player.hp + player.maxHp * healPct);
         player.ResetFighter();
@@ -240,8 +242,15 @@ public class BoutManager : MonoBehaviour
         if (!Fighting) return;
         Fighting = false;
         Say("K.O.!", 2.5f);
+        if (loser == player) BotWin();
         Sfx.Bell(Camera.main.transform.position);
         StartCoroutine(AfterFight(loser == bot));
+    }
+
+    void BotWin()
+    {
+        BoxerRig br = bot.GetComponent<BoxerRig>();
+        if (br != null) br.Win();
     }
 
     void TimeUp()
@@ -249,6 +258,7 @@ public class BoutManager : MonoBehaviour
         Fighting = false;
         bool pw = player.hp / player.maxHp >= bot.hp / bot.maxHp;
         Say("TIME!", 2f);
+        if (!pw) BotWin();
         Sfx.Bell(Camera.main.transform.position);
         StartCoroutine(AfterFight(pw));
     }

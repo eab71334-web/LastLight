@@ -276,7 +276,9 @@ public static class SceneBuilder
         bb.fighter = bf;
         List<Renderer> skinR = new List<Renderer>();
         List<Renderer> shortR = new List<Renderer>();
-        Transform bt = botGO.transform;
+        // simple primitive body, used only if the realistic model fails to load
+        Transform bt = new GameObject("Fallback").transform;
+        bt.SetParent(botGO.transform, false);
         skinR.Add(Part(PrimitiveType.Cube, "Torso", new Vector3(0, 1.3f, 0), new Vector3(0.64f, 0.7f, 0.34f), skin, bt).GetComponent<Renderer>());
         GameObject head = Part(PrimitiveType.Sphere, "Head", new Vector3(0, 1.82f, 0), new Vector3(0.3f, 0.34f, 0.32f), skin, bt);
         skinR.Add(head.GetComponent<Renderer>());
@@ -286,6 +288,16 @@ public static class SceneBuilder
         bf.gloveL = MakeGlove(bt, "GloveL", new Vector3(-0.32f, 1.3f, 0.3f), gloveBot, skin, skinR, 0.4f);
         bf.gloveR = MakeGlove(bt, "GloveR", new Vector3(0.32f, 1.3f, 0.3f), gloveBot, skin, skinR, 0.4f);
         bf.head = head.transform;
+        BoxerRig rig = botGO.AddComponent<BoxerRig>();
+        rig.fallbackRoot = bt.gameObject;
+        rig.skinMat = Mat("BoxerSkin", new Color(0.86f, 0.66f, 0.52f), false, 0.32f);
+        rig.shortsMat = Mat("BoxerShorts", new Color(0.2f, 0.5f, 0.95f), false, 0.25f);
+        rig.bandMat = Mat("BoxerBand", new Color(0.95f, 0.95f, 0.95f), false, 0.25f);
+        rig.hairMat = Mat("BoxerHair", new Color(0.05f, 0.04f, 0.035f), false, 0.3f);
+        rig.gloveMat = Mat("BoxerGlove", new Color(0.08f, 0.08f, 0.1f), false, 0.55f);
+        rig.tapeMat = Mat("BoxerTape", new Color(0.92f, 0.92f, 0.88f), false, 0.2f);
+        rig.eyeWhiteMat = Mat("BoxerEyeWhite", new Color(0.95f, 0.95f, 0.93f), false, 0.6f);
+        rig.irisMat = Mat("BoxerIris", new Color(0.12f, 0.07f, 0.04f), false, 0.7f);
 
         // ---- UI
         Sprite knob = AssetDatabase.GetBuiltinExtraResource<Sprite>("UI/Skin/Knob.psd");

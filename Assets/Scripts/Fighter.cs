@@ -27,6 +27,8 @@ public class Fighter : MonoBehaviour
     int pendingKind; // 0 none, 1 jab, 2 cross
     bool animLeft;
     Vector3 restL, restR;
+    BoxerRig rig; bool rigTried;
+    BoxerRig Rig { get { if (!rigTried) { rig = GetComponent<BoxerRig>(); rigTried = true; } return rig; } }
 
     void Start()
     {
@@ -38,6 +40,7 @@ public class Fighter : MonoBehaviour
     {
         hp = maxHp; stamina = maxStamina; Down = false; stagger = 0f; pendingKind = 0; fallT = 0f;
         Blocking = false; animDur = 0f; nextPunch = 0f;
+        if (Rig != null) Rig.ResetPose();
     }
 
     public bool TryPunch(bool cross)
@@ -53,12 +56,14 @@ public class Fighter : MonoBehaviour
         animLeft = !cross;
         animStart = Time.time;
         animDur = wind * 2f + 0.12f;
+        if (Rig != null) Rig.Punch(cross);
         return true;
     }
 
     public void Move(Vector3 dir, float dt)
     {
         if (!CanAct) return;
+        if (Rig != null && dir.sqrMagnitude > 0.01f) Rig.NoteMove();
         float sp = moveSpeed * (Blocking ? 0.5f : 1f);
         transform.position += dir * sp * dt;
         Separate();
@@ -94,7 +99,7 @@ public class Fighter : MonoBehaviour
 
         if (Down)
         {
-            if (!isPlayer)
+            if (!isPlayer && Rig == null)
             {
                 fallT += dt * 2.2f;
                 float k = Mathf.Clamp01(fallT);
@@ -108,6 +113,7 @@ public class Fighter : MonoBehaviour
         if (pendingKind != 0 && Time.time >= impactAt) { Resolve(); pendingKind = 0; }
         float regen = staminaRegen * (Blocking ? 0.4f : 1f);
         stamina = Mathf.Min(maxStamina, stamina + regen * dt);
+        if (Rig != null) Rig.SetBlock(Blocking);
         FaceOpponent(dt);
         AnimateGloves();
     }
@@ -145,7 +151,8 @@ public class Fighter : MonoBehaviour
             hp -= dmg * 0.15f;
             stamina -= dmg * 1.6f * blockCost;
             transform.position += away * 0.08f;
-            if (stamina <= 0f) { stamina = 0f; Blocking = false; stagger = 0.55f; }
+            if (stamina <= 0f) { stamina = 0f; Blocking = false; stagger = 0.55f; if (Rig != null) Rig.Stagger(); }
+            else if (Rig != null) Rig.Hit(true, heavy);
         }
         else
         {
@@ -153,10 +160,11 @@ public class Fighter : MonoBehaviour
             stagger = heavy ? 0.32f : 0.16f;
             pendingKind = 0;
             transform.position += away * (heavy ? 0.45f : 0.2f);
+            if (Rig != null) Rig.Hit(false, heavy);
         }
         ClampToRing();
         BoutManager.I.OnHit(this, from, dmg, blocked, heavy);
-        if (hp <= 0f) { hp = 0f; Down = true; Blocking = false; BoutManager.I.OnKnockout(this); }
+        if (hp <= 0f) { hp = 0f; Down = true; Blocking = false; if (Rig != null) Rig.Knockout(); BoutManager.I.OnKnockout(this); }
     }
 
     void AnimateGloves()
