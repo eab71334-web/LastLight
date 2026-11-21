@@ -6,7 +6,7 @@ using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
 /// <summary>
-/// Builds the whole Neon Arena scene from code (arena, units, HUD).
+/// Builds the whole Knockout Night scene from code (ring, boxers, HUD).
 /// Run it from the menu "Neon / Rebuild Main Scene" or let BuildScript call it during CI builds.
 /// </summary>
 public static class SceneBuilder
@@ -154,42 +154,20 @@ public static class SceneBuilder
     }
 
 
-    // ------------------------------------------------------------------ arena
-    const float Half = 30f;
-    static readonly Color Cyan = new Color(0.1f, 0.85f, 1f);
-    static readonly Color Magenta = new Color(1f, 0.15f, 0.6f);
-
-    static Combatant MakeUnit(string name, int team, Vector3 pos, float yaw, bool isPlayer,
-                              Material teamMat, Material visor, List<Combatant> all)
+    // ------------------------------------------------------------------ ring
+    static Transform MakeGlove(Transform parent, string name, Vector3 localPos, Material glove, Material arm,
+                               List<Renderer> armList, float armLen)
     {
         GameObject root = new GameObject(name);
-        root.transform.position = pos;
-        root.transform.rotation = Quaternion.Euler(0f, yaw, 0f);
-        CharacterController cc = root.AddComponent<CharacterController>();
-        cc.height = 1.8f; cc.radius = 0.4f; cc.center = new Vector3(0f, 0.9f, 0f);
-        cc.stepOffset = 0.35f; cc.slopeLimit = 50f; cc.skinWidth = 0.05f;
-
-        Combatant c = root.AddComponent<Combatant>();
-        c.team = team; c.displayName = name; c.isPlayer = isPlayer; c.maxHealth = 100f; c.health = 100f;
-        GameObject eye = new GameObject("Eye");
-        eye.transform.SetParent(root.transform, false);
-        eye.transform.localPosition = new Vector3(0f, 1.6f, 0f);
-        c.eye = eye.transform;
-
-        if (!isPlayer)
-        {
-            Part(PrimitiveType.Capsule, "Body", new Vector3(0, 0.9f, 0), new Vector3(0.8f, 0.85f, 0.8f), teamMat, root.transform);
-            Part(PrimitiveType.Sphere, "Head", new Vector3(0, 1.62f, 0), new Vector3(0.42f, 0.42f, 0.42f), teamMat, root.transform);
-            Part(PrimitiveType.Cube, "Visor", new Vector3(0, 1.64f, 0.17f), new Vector3(0.34f, 0.1f, 0.14f), visor, root.transform);
-            Part(PrimitiveType.Cube, "Gun", new Vector3(0.3f, 1.05f, 0.35f), new Vector3(0.1f, 0.12f, 0.6f), visor, root.transform);
-            BotAI ai = root.AddComponent<BotAI>();
-            ai.self = c; ai.eye = c.eye;
-        }
-        all.Add(c);
-        return c;
+        root.transform.SetParent(parent, false);
+        root.transform.localPosition = localPos;
+        Part(PrimitiveType.Sphere, "Fist", Vector3.zero, new Vector3(0.28f, 0.26f, 0.3f), glove, root.transform);
+        GameObject a = Part(PrimitiveType.Cube, "Arm", new Vector3(0, 0, -armLen / 2f - 0.1f), new Vector3(0.12f, 0.12f, armLen), arm, root.transform);
+        if (armList != null) armList.Add(a.GetComponent<Renderer>());
+        return root.transform;
     }
 
-    [MenuItem("Neon/Rebuild Main Scene")]
+    [MenuItem("Boxing/Rebuild Main Scene")]
     public static void BuildScene()
     {
         EnsureFolder("Assets/Scenes");
@@ -199,131 +177,115 @@ public static class SceneBuilder
         // ---- atmosphere
         Light sun = Object.FindObjectOfType<Light>();
         sun.type = LightType.Directional;
-        sun.transform.rotation = Quaternion.Euler(50, -30, 0);
-        sun.color = new Color(0.6f, 0.55f, 1f);
-        sun.intensity = 0.5f;
+        sun.transform.rotation = Quaternion.Euler(60, -20, 0);
+        sun.color = new Color(0.7f, 0.65f, 1f);
+        sun.intensity = 0.35f;
         sun.shadows = LightShadows.None;
         RenderSettings.skybox = null;
         RenderSettings.ambientMode = UnityEngine.Rendering.AmbientMode.Flat;
-        RenderSettings.ambientLight = new Color(0.22f, 0.18f, 0.38f);
+        RenderSettings.ambientLight = new Color(0.16f, 0.13f, 0.26f);
         RenderSettings.fog = true;
         RenderSettings.fogMode = FogMode.Exponential;
-        RenderSettings.fogDensity = 0.014f;
-        RenderSettings.fogColor = new Color(0.06f, 0.03f, 0.14f);
+        RenderSettings.fogDensity = 0.028f;
+        RenderSettings.fogColor = new Color(0.03f, 0.02f, 0.07f);
 
         Camera cam = Camera.main;
         cam.clearFlags = CameraClearFlags.SolidColor;
-        cam.backgroundColor = new Color(0.06f, 0.03f, 0.14f);
-        cam.fieldOfView = 78f;
+        cam.backgroundColor = new Color(0.03f, 0.02f, 0.07f);
+        cam.fieldOfView = 75f;
         cam.nearClipPlane = 0.05f;
-        cam.farClipPlane = 200f;
+        cam.farClipPlane = 120f;
 
         // ---- materials
-        Material floor = Mat("Floor", new Color(0.06f, 0.06f, 0.11f), false, 0.3f);
-        Material wall = Mat("Wall", new Color(0.07f, 0.09f, 0.2f), false, 0.2f);
-        Material cover = Mat("Cover", new Color(0.09f, 0.11f, 0.25f), false, 0.25f);
-        Material nCyan = Mat("NeonCyan", Cyan, true);
-        Material nMag = Mat("NeonMagenta", Magenta, true);
-        Material nPurple = Mat("NeonPurple", new Color(0.55f, 0.2f, 1f), true);
-        Material teamBlue = Mat("TeamBlue", new Color(0.05f, 0.55f, 0.75f), true);
-        Material teamRed = Mat("TeamRed", new Color(0.8f, 0.1f, 0.35f), true);
-        Material visorMat = Mat("Visor", new Color(1f, 1f, 1f), true);
-        Material gunDark = Mat("GunDark", new Color(0.08f, 0.08f, 0.12f), false, 0.4f, 0.3f);
-
-        // ---- arena
-        Transform arena = new GameObject("Arena").transform;
-        Solid(PrimitiveType.Cube, "Floor", new Vector3(0, -0.5f, 0), new Vector3(Half * 2, 1, Half * 2), floor, arena);
-        for (int i = -5; i <= 5; i++)
+        Material ground = Mat("Ground", new Color(0.05f, 0.05f, 0.09f), false, 0.1f);
+        Material apron = Mat("Apron", new Color(0.12f, 0.1f, 0.2f), false, 0.2f);
+        Material canvasM = Mat("RingCanvas", new Color(0.16f, 0.2f, 0.5f), false, 0.15f);
+        Material postM = Mat("Post", new Color(0.7f, 0.08f, 0.12f), false, 0.4f);
+        Material ropeC = Mat("RopeCyan", new Color(0.1f, 0.85f, 1f), true);
+        Material ropeM = Mat("RopeMagenta", new Color(1f, 0.15f, 0.6f), true);
+        Material ropeW = Mat("RopeWhite", new Color(1f, 1f, 1f), true);
+        Material glove = Mat("GloveRed", new Color(0.85f, 0.06f, 0.1f), false, 0.5f);
+        Material gloveBot = Mat("GloveDark", new Color(0.08f, 0.08f, 0.1f), false, 0.5f);
+        Material skin = Mat("Skin", new Color(0.8f, 0.6f, 0.46f), false, 0.3f);
+        Material shorts = Mat("Shorts", new Color(0.2f, 0.5f, 0.95f), false, 0.2f);
+        Material bloodMat = Mat("Blood", new Color(0.4f, 0.02f, 0.05f), false, 0.7f);
+        Material[] crowd =
         {
-            Deco(PrimitiveType.Cube, "GridZ", new Vector3(i * 6f, 0.011f, 0), new Vector3(0.1f, 0.02f, Half * 2), nPurple, arena);
-            Deco(PrimitiveType.Cube, "GridX", new Vector3(0, 0.012f, i * 6f), new Vector3(Half * 2, 0.02f, 0.1f), nPurple, arena);
-        }
-        float L = Half * 2 + 2;
-        Solid(PrimitiveType.Cube, "WallN", new Vector3(0, 4, Half + 0.5f), new Vector3(L, 8, 1), wall, arena);
-        Solid(PrimitiveType.Cube, "WallS", new Vector3(0, 4, -Half - 0.5f), new Vector3(L, 8, 1), wall, arena);
-        Solid(PrimitiveType.Cube, "WallE", new Vector3(Half + 0.5f, 4, 0), new Vector3(1, 8, L), wall, arena);
-        Solid(PrimitiveType.Cube, "WallW", new Vector3(-Half - 0.5f, 4, 0), new Vector3(1, 8, L), wall, arena);
-        float[] ys = { 0.1f, 7.85f };
-        foreach (float y in ys)
-        {
-            Deco(PrimitiveType.Cube, "StripN", new Vector3(0, y, Half - 0.02f), new Vector3(Half * 2, 0.15f, 0.1f), nCyan, arena);
-            Deco(PrimitiveType.Cube, "StripS", new Vector3(0, y, -Half + 0.02f), new Vector3(Half * 2, 0.15f, 0.1f), nCyan, arena);
-            Deco(PrimitiveType.Cube, "StripE", new Vector3(Half - 0.02f, y, 0), new Vector3(0.1f, 0.15f, Half * 2), nMag, arena);
-            Deco(PrimitiveType.Cube, "StripW", new Vector3(-Half + 0.02f, y, 0), new Vector3(0.1f, 0.15f, Half * 2), nMag, arena);
-        }
-
-        // cover: x, z, width, depth, height
-        float[,] blocks =
-        {
-            { 0, 0, 6, 6, 0.8f },
-            { 9, 9, 2.5f, 2.5f, 5 }, { -9, 9, 2.5f, 2.5f, 5 }, { 9, -9, 2.5f, 2.5f, 5 }, { -9, -9, 2.5f, 2.5f, 5 },
-            { 0, 14, 10, 1.2f, 3 }, { 0, -14, 10, 1.2f, 3 },
-            { 18, 0, 1.2f, 10, 3 }, { -18, 0, 1.2f, 10, 3 },
-            { 22, 20, 4, 4, 2 }, { -22, -20, 4, 4, 2 }, { 22, -20, 4, 4, 2 }, { -22, 20, 4, 4, 2 }
+            Mat("Crowd1", new Color(0.12f, 0.1f, 0.2f)), Mat("Crowd2", new Color(0.2f, 0.1f, 0.15f)),
+            Mat("Crowd3", new Color(0.08f, 0.14f, 0.22f)), Mat("Crowd4", new Color(0.18f, 0.16f, 0.1f)),
+            Mat("CrowdGlow1", new Color(0.1f, 0.85f, 1f), true), Mat("CrowdGlow2", new Color(1f, 0.15f, 0.6f), true)
         };
-        for (int i = 0; i < blocks.GetLength(0); i++)
-        {
-            float x = blocks[i, 0], z = blocks[i, 1], w = blocks[i, 2], d = blocks[i, 3], h = blocks[i, 4];
-            Solid(PrimitiveType.Cube, "Cover" + i, new Vector3(x, h / 2f, z), new Vector3(w, h, d), cover, arena);
-            Deco(PrimitiveType.Cube, "Cap" + i, new Vector3(x, h + 0.03f, z), new Vector3(w + 0.1f, 0.06f, d + 0.1f),
-                 (i % 2 == 0) ? nCyan : nMag, arena);
-        }
 
-        AddLight(arena, "LightA", LightType.Point, new Vector3(-24, 5, -24), Cyan, 2.5f, 38f, true);
-        AddLight(arena, "LightB", LightType.Point, new Vector3(24, 5, 24), Magenta, 2.5f, 38f, true);
-        AddLight(arena, "LightC", LightType.Point, new Vector3(24, 5, -24), new Color(0.6f, 0.3f, 1f), 2f, 38f, true);
-        AddLight(arena, "LightD", LightType.Point, new Vector3(-24, 5, 24), new Color(0.6f, 0.3f, 1f), 2f, 38f, true);
-        AddLight(arena, "LightCenter", LightType.Point, new Vector3(0, 6, 0), Color.white, 1.2f, 30f, true);
-
-        // ---- spawns
-        Transform[] sp0 = new Transform[3];
-        Transform[] sp1 = new Transform[3];
-        float[] sx = { -8f, 0f, 8f };
+        // ---- ring and arena
+        Transform arena = new GameObject("Arena").transform;
+        Solid(PrimitiveType.Cube, "Ground", new Vector3(0, -1.7f, 0), new Vector3(90, 1, 90), ground, arena);
+        Solid(PrimitiveType.Cube, "Apron", new Vector3(0, -0.6f, 0), new Vector3(12, 1.2f, 12), apron, arena);
+        Deco(PrimitiveType.Cube, "Canvas", new Vector3(0, 0.02f, 0), new Vector3(10.6f, 0.04f, 10.6f), canvasM, arena);
+        Deco(PrimitiveType.Cube, "CenterMark", new Vector3(0, 0.045f, 0), new Vector3(2.2f, 0.01f, 2.2f), ropeM, arena);
+        float e = 5.3f;
+        Material[] ropes = { ropeC, ropeM, ropeW };
+        float[] hs = { 0.55f, 0.95f, 1.35f };
         for (int i = 0; i < 3; i++)
         {
-            GameObject a = new GameObject("SpawnBlue" + i);
-            a.transform.SetParent(arena, false);
-            a.transform.position = new Vector3(sx[i], 0.05f, -25f);
-            a.transform.rotation = Quaternion.Euler(0, 0, 0);
-            sp0[i] = a.transform;
-            GameObject b = new GameObject("SpawnRed" + i);
-            b.transform.SetParent(arena, false);
-            b.transform.position = new Vector3(sx[i], 0.05f, 25f);
-            b.transform.rotation = Quaternion.Euler(0, 180, 0);
-            sp1[i] = b.transform;
+            Deco(PrimitiveType.Cube, "RopeN" + i, new Vector3(0, hs[i], e), new Vector3(e * 2, 0.07f, 0.07f), ropes[i], arena);
+            Deco(PrimitiveType.Cube, "RopeS" + i, new Vector3(0, hs[i], -e), new Vector3(e * 2, 0.07f, 0.07f), ropes[i], arena);
+            Deco(PrimitiveType.Cube, "RopeE" + i, new Vector3(e, hs[i], 0), new Vector3(0.07f, 0.07f, e * 2), ropes[i], arena);
+            Deco(PrimitiveType.Cube, "RopeW" + i, new Vector3(-e, hs[i], 0), new Vector3(0.07f, 0.07f, e * 2), ropes[i], arena);
+        }
+        for (int sx = -1; sx <= 1; sx += 2)
+            for (int sz = -1; sz <= 1; sz += 2)
+                Deco(PrimitiveType.Cylinder, "Post", new Vector3(sx * e, 0.85f, sz * e), new Vector3(0.22f, 0.85f, 0.22f), postM, arena);
+
+        // crowd
+        Random.InitState(7);
+        for (int i = 0; i < 110; i++)
+        {
+            float ang = Random.Range(0f, Mathf.PI * 2f);
+            float rad = Random.Range(10f, 22f);
+            float h = Random.Range(1.2f, 2.4f);
+            Material m = crowd[Random.value < 0.18f ? Random.Range(4, 6) : Random.Range(0, 4)];
+            Deco(PrimitiveType.Cube, "Fan", new Vector3(Mathf.Cos(ang) * rad, -1.2f + h / 2f, Mathf.Sin(ang) * rad),
+                 new Vector3(Random.Range(0.8f, 1.3f), h, Random.Range(0.8f, 1.3f)), m, arena);
         }
 
-        // ---- units
-        List<Combatant> all = new List<Combatant>();
-        Combatant pl = MakeUnit("You", 0, sp0[1].position, 0f, true, teamBlue, visorMat, all);
-        MakeUnit("Rex", 0, sp0[0].position, 0f, false, teamBlue, visorMat, all);
-        MakeUnit("Nova", 0, sp0[2].position, 0f, false, teamBlue, visorMat, all);
-        MakeUnit("Vex", 1, sp1[0].position, 180f, false, teamRed, visorMat, all);
-        MakeUnit("Kane", 1, sp1[1].position, 180f, false, teamRed, visorMat, all);
-        MakeUnit("Ghost", 1, sp1[2].position, 180f, false, teamRed, visorMat, all);
+        // lights
+        AddLight(arena, "Spot1", LightType.Point, new Vector3(3, 6, 3), new Color(1f, 0.95f, 0.85f), 2.2f, 16f, true);
+        AddLight(arena, "Spot2", LightType.Point, new Vector3(-3, 6, 3), new Color(1f, 0.95f, 0.85f), 2.2f, 16f, true);
+        AddLight(arena, "Spot3", LightType.Point, new Vector3(3, 6, -3), new Color(1f, 0.95f, 0.85f), 2.2f, 16f, true);
+        AddLight(arena, "Spot4", LightType.Point, new Vector3(-3, 6, -3), new Color(1f, 0.95f, 0.85f), 2.2f, 16f, true);
+        AddLight(arena, "Rim1", LightType.Point, new Vector3(-12, 3, 0), new Color(0.1f, 0.85f, 1f), 2f, 24f, true);
+        AddLight(arena, "Rim2", LightType.Point, new Vector3(12, 3, 0), new Color(1f, 0.15f, 0.6f), 2f, 24f, true);
 
-        // ---- player rig: camera + weapon
-        cam.transform.SetParent(pl.eye, false);
-        cam.transform.localPosition = Vector3.zero;
-        cam.transform.localRotation = Quaternion.identity;
+        // ---- player rig
+        GameObject playerGO = new GameObject("Player");
+        playerGO.transform.position = new Vector3(0, 0, -2.5f);
+        Fighter pf = playerGO.AddComponent<Fighter>();
+        pf.isPlayer = true; pf.displayName = "YOU";
+        PlayerBoxer pb = playerGO.AddComponent<PlayerBoxer>();
+        pb.fighter = pf; pb.cam = cam.transform;
+        pf.gloveL = MakeGlove(cam.transform, "GloveL", new Vector3(-0.3f, -0.32f, 0.55f), glove, skin, null, 0.7f);
+        pf.gloveR = MakeGlove(cam.transform, "GloveR", new Vector3(0.3f, -0.32f, 0.55f), glove, skin, null, 0.7f);
 
-        GameObject gun = new GameObject("Weapon");
-        gun.transform.SetParent(cam.transform, false);
-        gun.transform.localPosition = new Vector3(0.24f, -0.22f, 0.5f);
-        gun.transform.localScale = new Vector3(0.72f, 0.72f, 0.72f);
-        Part(PrimitiveType.Cube, "GunBody", new Vector3(0, 0, 0), new Vector3(0.08f, 0.1f, 0.5f), gunDark, gun.transform);
-        Part(PrimitiveType.Cube, "GunGlow", new Vector3(0, 0.055f, 0.02f), new Vector3(0.05f, 0.015f, 0.42f), nCyan, gun.transform);
-        Part(PrimitiveType.Cube, "GunGrip", new Vector3(0, -0.1f, -0.12f), new Vector3(0.07f, 0.14f, 0.09f), gunDark, gun.transform, new Vector3(15, 0, 0));
-        GameObject muzzle = new GameObject("Muzzle");
-        muzzle.transform.SetParent(gun.transform, false);
-        muzzle.transform.localPosition = new Vector3(0, 0.02f, 0.32f);
-        Light flash = AddLight(muzzle.transform, "Flash", LightType.Point, Vector3.zero, new Color(1f, 0.9f, 0.5f), 3f, 8f, false);
-
-        FpsPlayer fps = pl.gameObject.AddComponent<FpsPlayer>();
-        WeaponController wc = pl.gameObject.AddComponent<WeaponController>();
-        wc.cam = cam.transform; wc.owner = pl; wc.player = fps; wc.muzzle = muzzle.transform;
-        wc.flash = flash; wc.model = gun.transform;
-        fps.cam = cam.transform; fps.weapon = wc;
+        // ---- opponent
+        GameObject botGO = new GameObject("Opponent");
+        botGO.transform.position = new Vector3(0, 0, 2.5f);
+        botGO.transform.rotation = Quaternion.Euler(0, 180, 0);
+        Fighter bf = botGO.AddComponent<Fighter>();
+        bf.displayName = "ROOKIE SAM";
+        BotBoxer bb = botGO.AddComponent<BotBoxer>();
+        bb.fighter = bf;
+        List<Renderer> skinR = new List<Renderer>();
+        List<Renderer> shortR = new List<Renderer>();
+        Transform bt = botGO.transform;
+        skinR.Add(Part(PrimitiveType.Cube, "Torso", new Vector3(0, 1.3f, 0), new Vector3(0.64f, 0.7f, 0.34f), skin, bt).GetComponent<Renderer>());
+        GameObject head = Part(PrimitiveType.Sphere, "Head", new Vector3(0, 1.82f, 0), new Vector3(0.3f, 0.34f, 0.32f), skin, bt);
+        skinR.Add(head.GetComponent<Renderer>());
+        shortR.Add(Part(PrimitiveType.Cube, "Shorts", new Vector3(0, 0.8f, 0), new Vector3(0.66f, 0.45f, 0.36f), shorts, bt).GetComponent<Renderer>());
+        skinR.Add(Part(PrimitiveType.Cube, "LegL", new Vector3(-0.16f, 0.3f, 0), new Vector3(0.22f, 0.6f, 0.24f), skin, bt).GetComponent<Renderer>());
+        skinR.Add(Part(PrimitiveType.Cube, "LegR", new Vector3(0.16f, 0.3f, 0), new Vector3(0.22f, 0.6f, 0.24f), skin, bt).GetComponent<Renderer>());
+        bf.gloveL = MakeGlove(bt, "GloveL", new Vector3(-0.32f, 1.3f, 0.3f), gloveBot, skin, skinR, 0.4f);
+        bf.gloveR = MakeGlove(bt, "GloveR", new Vector3(0.32f, 1.3f, 0.3f), gloveBot, skin, skinR, 0.4f);
+        bf.head = head.transform;
 
         // ---- UI
         Sprite knob = AssetDatabase.GetBuiltinExtraResource<Sprite>("UI/Skin/Knob.psd");
@@ -341,121 +303,84 @@ public static class SceneBuilder
         if (Object.FindObjectOfType<EventSystem>() == null)
             new GameObject("EventSystem", typeof(EventSystem), typeof(StandaloneInputModule));
 
-        // aim area (behind everything else)
-        Image lookImg = MakeImage(ct, "LookArea", new Color(0, 0, 0, 0));
-        Stretch(lookImg.transform, new Vector2(0.3f, 0), new Vector2(1, 1), Vector2.zero, Vector2.zero);
-        TouchLook look = lookImg.gameObject.AddComponent<TouchLook>();
-        look.player = fps;
-
         Image hurt = MakeImage(ct, "Hurt", new Color(1, 0, 0, 0), null, false, false);
         Stretch(hurt.transform, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
+        GameObject splatGO = new GameObject("Splats", typeof(RectTransform));
+        splatGO.transform.SetParent(ct, false);
+        Stretch(splatGO.transform, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
 
         GameObject safe = new GameObject("Safe", typeof(RectTransform));
         safe.transform.SetParent(ct, false);
         Stretch(safe.transform, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
         safe.AddComponent<SafeArea>();
         Transform st = safe.transform;
-
-        // crosshair
         Vector2 mid = new Vector2(0.5f, 0.5f);
-        Color cross = new Color(1, 1, 1, 0.9f);
-        Fixed(MakeImage(st, "CrossL", cross, null, false, false).transform, mid, mid, new Vector2(-18, 0), new Vector2(16, 3));
-        Fixed(MakeImage(st, "CrossR", cross, null, false, false).transform, mid, mid, new Vector2(18, 0), new Vector2(16, 3));
-        Fixed(MakeImage(st, "CrossU", cross, null, false, false).transform, mid, mid, new Vector2(0, 18), new Vector2(3, 16));
-        Fixed(MakeImage(st, "CrossD", cross, null, false, false).transform, mid, mid, new Vector2(0, -18), new Vector2(3, 16));
+        Vector2 tl = new Vector2(0, 1), tr = new Vector2(1, 1), tc = new Vector2(0.5f, 1f), br = new Vector2(1, 0);
 
-        // hit marker
-        GameObject hm = new GameObject("HitMarker", typeof(RectTransform));
-        hm.transform.SetParent(st, false);
-        Fixed(hm.transform, mid, mid, Vector2.zero, new Vector2(60, 60));
-        Image h1 = MakeImage(hm.transform, "A", new Color(1, 0.3f, 0.3f, 1), null, false, false);
-        Fixed(h1.transform, mid, mid, Vector2.zero, new Vector2(46, 5));
-        h1.transform.localRotation = Quaternion.Euler(0, 0, 45);
-        Image h2 = MakeImage(hm.transform, "B", new Color(1, 0.3f, 0.3f, 1), null, false, false);
-        Fixed(h2.transform, mid, mid, Vector2.zero, new Vector2(46, 5));
-        h2.transform.localRotation = Quaternion.Euler(0, 0, -45);
+        // fighter bars
+        Text pName = MakeText(st, "PlayerName", "YOU", 40, TextAnchor.MiddleLeft, new Color(0.3f, 0.9f, 1f), FontStyle.Bold);
+        Fixed(pName.transform, tl, tl, new Vector2(40, -16), new Vector2(500, 56));
+        Image pBack = MakeImage(st, "PlayerHpBack", new Color(0, 0, 0, 0.55f), round, true, false);
+        Fixed(pBack.transform, tl, tl, new Vector2(40, -76), new Vector2(720, 40));
+        Image pFill = MakeImage(pBack.transform, "Fill", new Color(0.2f, 1f, 0.6f), round, false, false);
+        pFill.type = Image.Type.Filled; pFill.fillMethod = Image.FillMethod.Horizontal; pFill.fillOrigin = 0;
+        Stretch(pFill.transform, Vector2.zero, Vector2.one, new Vector2(4, 4), new Vector2(-4, -4));
+        Image sBack = MakeImage(st, "StaminaBack", new Color(0, 0, 0, 0.5f), round, true, false);
+        Fixed(sBack.transform, tl, tl, new Vector2(40, -124), new Vector2(420, 18));
+        Image sFill = MakeImage(sBack.transform, "Fill", new Color(1f, 0.85f, 0.2f), round, false, false);
+        sFill.type = Image.Type.Filled; sFill.fillMethod = Image.FillMethod.Horizontal; sFill.fillOrigin = 0;
+        Stretch(sFill.transform, Vector2.zero, Vector2.one, new Vector2(2, 2), new Vector2(-2, -2));
+
+        Text bName = MakeText(st, "BotName", "ROOKIE SAM", 40, TextAnchor.MiddleRight, new Color(1f, 0.3f, 0.6f), FontStyle.Bold);
+        Fixed(bName.transform, tr, tr, new Vector2(-40, -16), new Vector2(600, 56));
+        Image bBack = MakeImage(st, "BotHpBack", new Color(0, 0, 0, 0.55f), round, true, false);
+        Fixed(bBack.transform, tr, tr, new Vector2(-40, -76), new Vector2(720, 40));
+        Image bFill = MakeImage(bBack.transform, "Fill", new Color(1f, 0.25f, 0.45f), round, false, false);
+        bFill.type = Image.Type.Filled; bFill.fillMethod = Image.FillMethod.Horizontal; bFill.fillOrigin = 1;
+        Stretch(bFill.transform, Vector2.zero, Vector2.one, new Vector2(4, 4), new Vector2(-4, -4));
+
+        Text timer = MakeText(st, "Timer", "1:30", 64, TextAnchor.MiddleCenter, Color.white, FontStyle.Bold);
+        Fixed(timer.transform, tc, tc, new Vector2(0, -14), new Vector2(240, 80));
+        Text fightT = MakeText(st, "FightNo", "FIGHT 1 / 5", 28, TextAnchor.MiddleCenter, new Color(0.8f, 0.85f, 1f), FontStyle.Bold);
+        Fixed(fightT.transform, tc, tc, new Vector2(0, -92), new Vector2(300, 40));
+        Text center = MakeText(st, "Center", "", 110, TextAnchor.MiddleCenter, Color.white, FontStyle.Bold);
+        Fixed(center.transform, mid, mid, new Vector2(0, 180), new Vector2(1500, 180));
 
         // joystick
         Image jbg = MakeImage(st, "Joystick", new Color(1, 1, 1, 0.15f), knob);
-        Fixed(jbg.transform, Vector2.zero, mid, new Vector2(250, 270), new Vector2(320, 320));
+        Fixed(jbg.transform, Vector2.zero, mid, new Vector2(260, 260), new Vector2(320, 320));
         Image jh = MakeImage(jbg.transform, "Handle", new Color(1, 1, 1, 0.45f), knob, false, false);
         Fixed(jh.transform, mid, mid, Vector2.zero, new Vector2(140, 140));
         VirtualJoystick joy = jbg.gameObject.AddComponent<VirtualJoystick>();
         joy.background = (RectTransform)jbg.transform;
         joy.handle = (RectTransform)jh.transform;
         joy.radius = 110f;
-        fps.joystick = joy;
+        pb.joystick = joy;
 
-        // buttons (right side)
-        Vector2 br = new Vector2(1, 0);
-        Image fire = MakeImage(st, "FireButton", new Color(1f, 0.2f, 0.4f, 0.55f), knob);
-        Fixed(fire.transform, br, mid, new Vector2(-250, 290), new Vector2(250, 250));
-        fps.fireButton = fire.gameObject.AddComponent<HoldButton>();
-        Text fl = MakeText(fire.transform, "Label", "FIRE", 44, TextAnchor.MiddleCenter, Color.white, FontStyle.Bold);
-        Stretch(fl.transform, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
+        // punch buttons
+        Image cross = MakeImage(st, "CrossButton", new Color(1f, 0.2f, 0.4f, 0.6f), knob);
+        Fixed(cross.transform, br, mid, new Vector2(-190, 300), new Vector2(260, 260));
+        pb.crossButton = cross.gameObject.AddComponent<Button>(); pb.crossButton.targetGraphic = cross;
+        Text cl = MakeText(cross.transform, "Label", "CROSS", 44, TextAnchor.MiddleCenter, Color.white, FontStyle.Bold);
+        Stretch(cl.transform, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
 
-        Image jump = MakeImage(st, "JumpButton", new Color(0.1f, 0.8f, 1f, 0.45f), knob);
-        Fixed(jump.transform, br, mid, new Vector2(-520, 190), new Vector2(170, 170));
-        fps.jumpButton = jump.gameObject.AddComponent<Button>();
-        fps.jumpButton.targetGraphic = jump;
-        Text jl = MakeText(jump.transform, "Label", "JUMP", 32, TextAnchor.MiddleCenter, Color.white, FontStyle.Bold);
+        Image jab = MakeImage(st, "JabButton", new Color(1f, 0.55f, 0.15f, 0.6f), knob);
+        Fixed(jab.transform, br, mid, new Vector2(-470, 200), new Vector2(210, 210));
+        pb.jabButton = jab.gameObject.AddComponent<Button>(); pb.jabButton.targetGraphic = jab;
+        Text jl = MakeText(jab.transform, "Label", "JAB", 40, TextAnchor.MiddleCenter, Color.white, FontStyle.Bold);
         Stretch(jl.transform, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
 
-        Image rel = MakeImage(st, "ReloadButton", new Color(1f, 0.85f, 0.2f, 0.45f), knob);
-        Fixed(rel.transform, br, mid, new Vector2(-380, 330), new Vector2(130, 130));
-        fps.reloadButton = rel.gameObject.AddComponent<Button>();
-        fps.reloadButton.targetGraphic = rel;
-        Text rl = MakeText(rel.transform, "Label", "RELOAD", 26, TextAnchor.MiddleCenter, Color.white, FontStyle.Bold);
-        Stretch(rl.transform, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
+        Image blk = MakeImage(st, "BlockButton", new Color(0.1f, 0.8f, 1f, 0.55f), knob);
+        Fixed(blk.transform, br, mid, new Vector2(-470, 450), new Vector2(200, 200));
+        pb.blockButton = blk.gameObject.AddComponent<HoldButton>();
+        Text bl = MakeText(blk.transform, "Label", "BLOCK", 38, TextAnchor.MiddleCenter, Color.white, FontStyle.Bold);
+        Stretch(bl.transform, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
 
-        // HUD text
-        Text ammo = MakeText(st, "Ammo", "30 / 30", 60, TextAnchor.MiddleRight, Color.white, FontStyle.Bold);
-        Fixed(ammo.transform, br, br, new Vector2(-50, 30), new Vector2(480, 100));
-
-        Image hbg = MakeImage(st, "HealthBack", new Color(0, 0, 0, 0.55f), round, true, false);
-        Fixed(hbg.transform, Vector2.zero, Vector2.zero, new Vector2(60, 40), new Vector2(440, 44));
-        Image hfill = MakeImage(hbg.transform, "Fill", new Color(0.2f, 1f, 0.6f), round, false, false);
-        hfill.type = Image.Type.Filled;
-        hfill.fillMethod = Image.FillMethod.Horizontal;
-        hfill.fillOrigin = 0;
-        Stretch(hfill.transform, Vector2.zero, Vector2.one, new Vector2(4, 4), new Vector2(-4, -4));
-        Text htext = MakeText(hbg.transform, "Text", "100", 30, TextAnchor.MiddleCenter, Color.white, FontStyle.Bold);
-        Stretch(htext.transform, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
-
-        Vector2 tc = new Vector2(0.5f, 1f);
-        Text timer = MakeText(st, "Timer", "3:00", 60, TextAnchor.MiddleCenter, Color.white, FontStyle.Bold);
-        Fixed(timer.transform, tc, tc, new Vector2(0, -20), new Vector2(260, 80));
-        Text sBlue = MakeText(st, "ScoreBlue", "0", 56, TextAnchor.MiddleCenter, new Color(0.3f, 0.9f, 1f), FontStyle.Bold);
-        Fixed(sBlue.transform, tc, tc, new Vector2(-210, -22), new Vector2(160, 76));
-        Text sRed = MakeText(st, "ScoreRed", "0", 56, TextAnchor.MiddleCenter, new Color(1f, 0.3f, 0.6f), FontStyle.Bold);
-        Fixed(sRed.transform, tc, tc, new Vector2(210, -22), new Vector2(160, 76));
-
-        Vector2 tr = new Vector2(1f, 1f);
-        Text feed = MakeText(st, "KillFeed", "", 30, TextAnchor.UpperRight, Color.white, FontStyle.Bold);
-        Fixed(feed.transform, tr, tr, new Vector2(-30, -24), new Vector2(560, 180));
-
-        Text center = MakeText(st, "Center", "", 80, TextAnchor.MiddleCenter, Color.white, FontStyle.Bold);
-        Fixed(center.transform, mid, mid, new Vector2(0, 200), new Vector2(1300, 140));
-
-        // end panel
-        Image endImg = MakeImage(ct, "EndPanel", new Color(0, 0, 0, 0.78f));
-        Stretch(endImg.transform, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
-        Text endTitle = MakeText(endImg.transform, "Title", "VICTORY", 120, TextAnchor.MiddleCenter, Color.white, FontStyle.Bold);
-        Fixed(endTitle.transform, mid, mid, new Vector2(0, 170), new Vector2(1300, 180));
-        Text endScore = MakeText(endImg.transform, "Score", "0 - 0", 80, TextAnchor.MiddleCenter, new Color(0.8f, 0.9f, 1f), FontStyle.Bold);
-        Fixed(endScore.transform, mid, mid, new Vector2(0, 30), new Vector2(900, 120));
-        Image rb = MakeImage(endImg.transform, "Restart", new Color(0.1f, 0.85f, 1f, 0.95f), round, true);
-        Fixed(rb.transform, mid, mid, new Vector2(0, -150), new Vector2(460, 130));
-        Button rbBtn = rb.gameObject.AddComponent<Button>();
-        rbBtn.targetGraphic = rb;
-        Text rbl = MakeText(rb.transform, "Label", "Play again", 50, TextAnchor.MiddleCenter, new Color(0.05f, 0.05f, 0.15f), FontStyle.Bold);
-        Stretch(rbl.transform, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
-
-        // upgrade cards (shown every 5 kills)
-        Image cardImg = MakeImage(ct, "CardPanel", new Color(0, 0, 0, 0.8f));
+        // upgrade cards
+        Image cardImg = MakeImage(ct, "CardPanel", new Color(0, 0, 0, 0.82f));
         Stretch(cardImg.transform, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
-        Text cardHead = MakeText(cardImg.transform, "Head", "CHOOSE AN UPGRADE", 72, TextAnchor.MiddleCenter, Color.white, FontStyle.Bold);
-        Fixed(cardHead.transform, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0, -110), new Vector2(1400, 120));
+        Text cardHead = MakeText(cardImg.transform, "Head", "YOU WON! PICK AN UPGRADE", 70, TextAnchor.MiddleCenter, Color.white, FontStyle.Bold);
+        Fixed(cardHead.transform, tc, tc, new Vector2(0, -110), new Vector2(1600, 120));
         Text[] cTitles = new Text[3];
         Text[] cDescs = new Text[3];
         Button[] cBtns = new Button[3];
@@ -463,33 +388,46 @@ public static class SceneBuilder
         {
             Image cb = MakeImage(cardImg.transform, "Card" + i, new Color(0.1f, 0.13f, 0.32f, 0.98f), round, true);
             Fixed(cb.transform, mid, mid, new Vector2((i - 1) * 560, -30), new Vector2(500, 600));
-            Button bt = cb.gameObject.AddComponent<Button>();
-            bt.targetGraphic = cb;
-            Text ct1 = MakeText(cb.transform, "Title", "CARD", 50, TextAnchor.MiddleCenter, new Color(0.3f, 0.9f, 1f), FontStyle.Bold);
-            Stretch(ct1.transform, new Vector2(0.05f, 0.55f), new Vector2(0.95f, 0.92f), Vector2.zero, Vector2.zero);
-            Text ct2 = MakeText(cb.transform, "Desc", "", 38, TextAnchor.UpperCenter, Color.white);
-            Stretch(ct2.transform, new Vector2(0.1f, 0.12f), new Vector2(0.9f, 0.52f), Vector2.zero, Vector2.zero);
-            cTitles[i] = ct1; cDescs[i] = ct2; cBtns[i] = bt;
+            Button bt2 = cb.gameObject.AddComponent<Button>();
+            bt2.targetGraphic = cb;
+            Text t1 = MakeText(cb.transform, "Title", "CARD", 52, TextAnchor.MiddleCenter, new Color(0.3f, 0.9f, 1f), FontStyle.Bold);
+            Stretch(t1.transform, new Vector2(0.05f, 0.55f), new Vector2(0.95f, 0.92f), Vector2.zero, Vector2.zero);
+            Text t2 = MakeText(cb.transform, "Desc", "", 38, TextAnchor.UpperCenter, Color.white);
+            Stretch(t2.transform, new Vector2(0.1f, 0.12f), new Vector2(0.9f, 0.52f), Vector2.zero, Vector2.zero);
+            cTitles[i] = t1; cDescs[i] = t2; cBtns[i] = bt2;
         }
         cardImg.gameObject.SetActive(false);
 
-        // ---- match logic
+        // end panel
+        Image endImg = MakeImage(ct, "EndPanel", new Color(0, 0, 0, 0.82f));
+        Stretch(endImg.transform, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
+        Text endTitle = MakeText(endImg.transform, "Title", "KNOCKED OUT", 120, TextAnchor.MiddleCenter, Color.white, FontStyle.Bold);
+        Fixed(endTitle.transform, mid, mid, new Vector2(0, 170), new Vector2(1500, 180));
+        Text endSub = MakeText(endImg.transform, "Sub", "", 56, TextAnchor.MiddleCenter, new Color(0.8f, 0.9f, 1f), FontStyle.Bold);
+        Fixed(endSub.transform, mid, mid, new Vector2(0, 30), new Vector2(1200, 100));
+        Image rb = MakeImage(endImg.transform, "Restart", new Color(0.1f, 0.85f, 1f, 0.95f), round, true);
+        Fixed(rb.transform, mid, mid, new Vector2(0, -150), new Vector2(460, 130));
+        Button rbBtn = rb.gameObject.AddComponent<Button>();
+        rbBtn.targetGraphic = rb;
+        Text rbl = MakeText(rb.transform, "Label", "Play again", 50, TextAnchor.MiddleCenter, new Color(0.05f, 0.05f, 0.15f), FontStyle.Bold);
+        Stretch(rbl.transform, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
+        endImg.gameObject.SetActive(false);
+
+        // ---- bout logic
         GameObject game = new GameObject("Game");
-        MatchManager mm = game.AddComponent<MatchManager>();
-        mm.all = all;
-        mm.spawns0 = sp0; mm.spawns1 = sp1;
-        mm.player = pl; mm.weapon = wc; mm.fps = fps;
-        mm.timerText = timer; mm.scoreBlue = sBlue; mm.scoreRed = sRed;
-        mm.ammoText = ammo; mm.healthText = htext; mm.centerText = center; mm.feedText = feed;
-        mm.endTitle = endTitle; mm.endScore = endScore;
-        mm.healthFill = hfill; mm.hurtOverlay = hurt;
-        mm.cardPanel = cardImg.gameObject; mm.cardTitle = cTitles; mm.cardDesc = cDescs; mm.cardButton = cBtns;
-        mm.hitMarker = hm; mm.endPanel = endImg.gameObject; mm.restartButton = rbBtn;
+        BoutManager bm = game.AddComponent<BoutManager>();
+        bm.player = pf; bm.bot = bf; bm.pb = pb; bm.botAI = bb;
+        bm.botSkin = skinR.ToArray(); bm.botShorts = shortR.ToArray();
+        bm.bloodMat = bloodMat; bm.splatSprite = round; bm.splatRoot = (RectTransform)splatGO.transform;
+        bm.playerHpFill = pFill; bm.playerStFill = sFill; bm.botHpFill = bFill; bm.hurtOverlay = hurt;
+        bm.playerNameText = pName; bm.botNameText = bName; bm.timerText = timer; bm.fightText = fightT; bm.centerText = center;
+        bm.cardPanel = cardImg.gameObject; bm.cardTitle = cTitles; bm.cardDesc = cDescs; bm.cardButton = cBtns;
+        bm.endPanel = endImg.gameObject; bm.endTitle = endTitle; bm.endSub = endSub; bm.restartButton = rbBtn;
 
         EditorSceneManager.SaveScene(scene, ScenePath);
         EditorBuildSettings.scenes = new[] { new EditorBuildSettingsScene(ScenePath, true) };
         AssetDatabase.SaveAssets();
         AssetDatabase.Refresh();
-        Debug.Log("Neon Arena scene built: " + ScenePath);
+        Debug.Log("Knockout Night scene built: " + ScenePath);
     }
 }

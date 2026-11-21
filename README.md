@@ -1,19 +1,19 @@
-# Neon Arena (Unity 3D, first-person team deathmatch)
+# Knockout Night (Unity 3D, first-person boxing tournament)
 
-Mobile first-person arena shooter for Android (iPhone later). Version 1 is offline: you and 2 bot allies
-(blue) against 3 bot enemies (red). First team to 20 kills or the most kills after 3 minutes wins.
+First-person boxing for Android (iPhone later). Version 1 is offline: a run of 5 fights against bots of rising
+difficulty, 90 seconds each. Win by knockout or by health when time runs out, then pick 1 of 3 upgrade cards.
 
 ## Controls
-Left stick = move, drag the right side = aim, FIRE (hold), JUMP, RELOAD.
-Editor: WASD, right mouse = look, F = fire, Space = jump, R = reload.
+Left stick = move / circle the opponent (the camera locks on), JAB and CROSS = punches, hold BLOCK = guard.
+Editor: WASD, J jab, K cross, hold L to block.
 
 ## How the project works
-- Everything is code. `Assets/Editor/SceneBuilder.cs` builds the arena, units and HUD (menu **Neon > Rebuild Main Scene**).
+- Everything is code. `Assets/Editor/SceneBuilder.cs` builds the ring, boxers and HUD (menu **Boxing > Rebuild Main Scene**).
 - `Assets/Editor/AutoBuildScene.cs` generates the scene automatically on the cloud builder.
-- Gameplay: `Assets/Scripts` (Combatant, FpsPlayer, WeaponController, BotAI, MatchManager, HUD helpers).
+- Gameplay: `Assets/Scripts` (Fighter, PlayerBoxer, BotBoxer, BoutManager).
 - Build on Unity Build Automation (cloud.unity.com) -> Default Android.
 
 ## Next
-Online play (Netcode + Relay), more maps and weapons, minimap, player progression.
+Online bouts (winner stays, spectators bet and throw items), more cards, more arenas.
 
-The old story game "The Last Light" (Chapter 1) is kept in git history (tag `lastlight-ch1`).
+Earlier games stay in git history: tags `lastlight-ch1` (The Last Light) and the Neon Arena commits.

@@ -11,7 +11,7 @@ using UnityEngine;
 /// </summary>
 public static class BuildScript
 {
-    const string ProductName = "Neon Arena";
+    const string ProductName = "Knockout Night";
 
     static string Arg(string[] args, string key, string fallback)
     {
@@ -25,7 +25,7 @@ public static class BuildScript
         string[] args = Environment.GetCommandLineArgs();
         string path = Arg(args, "-customBuildPath", "Builds/Out");
         string targetName = Arg(args, "-customBuildTarget", "Android");
-        string buildName = Arg(args, "-customBuildName", "NeonArena");
+        string buildName = Arg(args, "-customBuildName", "KnockoutNight");
         BuildTarget target = (BuildTarget)Enum.Parse(typeof(BuildTarget), targetName);
 
         SceneBuilder.BuildScene();
@@ -42,7 +42,7 @@ public static class BuildScript
         {
             Directory.CreateDirectory(path);
             location = path; // Xcode project folder
-            PlayerSettings.SetApplicationIdentifier(NamedBuildTarget.iOS, "com.neonarena.game");
+            PlayerSettings.SetApplicationIdentifier(NamedBuildTarget.iOS, "com.knockoutnight.game");
             PlayerSettings.iOS.targetOSVersionString = "13.0";
         }
         else
@@ -67,7 +67,7 @@ public static class BuildScript
     public static void ApplyAndroidSettings()
     {
         EditorUserBuildSettings.buildAppBundle = false;
-        PlayerSettings.SetApplicationIdentifier(NamedBuildTarget.Android, "com.neonarena.game");
+        PlayerSettings.SetApplicationIdentifier(NamedBuildTarget.Android, "com.knockoutnight.game");
         PlayerSettings.SetScriptingBackend(NamedBuildTarget.Android, ScriptingImplementation.IL2CPP);
         PlayerSettings.Android.targetArchitectures = AndroidArchitecture.ARM64;
         PlayerSettings.Android.minSdkVersion = AndroidSdkVersions.AndroidApiLevel24;
@@ -75,7 +75,7 @@ public static class BuildScript
 
     public static void ApplySettings()
     {
-        PlayerSettings.companyName = "NeonArena";
+        PlayerSettings.companyName = "KnockoutNight";
         PlayerSettings.productName = ProductName;
         PlayerSettings.colorSpace = ColorSpace.Linear;
         PlayerSettings.defaultInterfaceOrientation = UIOrientation.AutoRotation;
