@@ -9,7 +9,7 @@ using UnityEngine.UI;
 /// Builds the whole Knockout Night scene from code (ring, boxers, HUD).
 /// Run it from the menu "Neon / Rebuild Main Scene" or let BuildScript call it during CI builds.
 /// </summary>
-public static class SceneBuilder
+public static partial class SceneBuilder
 {
     const string ScenePath = "Assets/Scenes/Main.unity";
 
@@ -221,32 +221,7 @@ public static class SceneBuilder
         Solid(PrimitiveType.Cube, "Ground", new Vector3(0, -1.7f, 0), new Vector3(90, 1, 90), ground, arena);
         Solid(PrimitiveType.Cube, "Apron", new Vector3(0, -0.6f, 0), new Vector3(12, 1.2f, 12), apron, arena);
         Deco(PrimitiveType.Cube, "Canvas", new Vector3(0, 0.02f, 0), new Vector3(10.6f, 0.04f, 10.6f), canvasM, arena);
-        Deco(PrimitiveType.Cube, "CenterMark", new Vector3(0, 0.045f, 0), new Vector3(2.2f, 0.01f, 2.2f), ropeM, arena);
-        float e = 5.3f;
-        Material[] ropes = { ropeC, ropeM, ropeW };
-        float[] hs = { 0.55f, 0.95f, 1.35f };
-        for (int i = 0; i < 3; i++)
-        {
-            Deco(PrimitiveType.Cube, "RopeN" + i, new Vector3(0, hs[i], e), new Vector3(e * 2, 0.07f, 0.07f), ropes[i], arena);
-            Deco(PrimitiveType.Cube, "RopeS" + i, new Vector3(0, hs[i], -e), new Vector3(e * 2, 0.07f, 0.07f), ropes[i], arena);
-            Deco(PrimitiveType.Cube, "RopeE" + i, new Vector3(e, hs[i], 0), new Vector3(0.07f, 0.07f, e * 2), ropes[i], arena);
-            Deco(PrimitiveType.Cube, "RopeW" + i, new Vector3(-e, hs[i], 0), new Vector3(0.07f, 0.07f, e * 2), ropes[i], arena);
-        }
-        for (int sx = -1; sx <= 1; sx += 2)
-            for (int sz = -1; sz <= 1; sz += 2)
-                Deco(PrimitiveType.Cylinder, "Post", new Vector3(sx * e, 0.85f, sz * e), new Vector3(0.22f, 0.85f, 0.22f), postM, arena);
-
-        // crowd
-        Random.InitState(7);
-        for (int i = 0; i < 110; i++)
-        {
-            float ang = Random.Range(0f, Mathf.PI * 2f);
-            float rad = Random.Range(10f, 22f);
-            float h = Random.Range(1.2f, 2.4f);
-            Material m = crowd[Random.value < 0.18f ? Random.Range(4, 6) : Random.Range(0, 4)];
-            Deco(PrimitiveType.Cube, "Fan", new Vector3(Mathf.Cos(ang) * rad, -1.2f + h / 2f, Mathf.Sin(ang) * rad),
-                 new Vector3(Random.Range(0.8f, 1.3f), h, Random.Range(0.8f, 1.3f)), m, arena);
-        }
+        BuildRingAndStage(arena, ropeC, ropeM, ropeW, postM);
 
         // lights
         AddLight(arena, "Spot1", LightType.Point, new Vector3(3, 6, 3), new Color(1f, 0.95f, 0.85f), 2.2f, 16f, true);
@@ -373,18 +348,21 @@ public static class SceneBuilder
         Image cross = MakeImage(st, "CrossButton", new Color(1f, 0.2f, 0.4f, 0.6f), knob);
         Fixed(cross.transform, br, mid, new Vector2(-190, 300), new Vector2(260, 260));
         pb.crossButton = cross.gameObject.AddComponent<Button>(); pb.crossButton.targetGraphic = cross;
+        StyledButton sbCross = cross.gameObject.AddComponent<StyledButton>(); sbCross.look = StyledButton.Look.Primary; sbCross.circle = true; sbCross.alpha = 0.9f; sbCross.silent = true;
         Text cl = MakeText(cross.transform, "Label", "CROSS", 44, TextAnchor.MiddleCenter, Color.white, FontStyle.Bold);
         Stretch(cl.transform, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
 
         Image jab = MakeImage(st, "JabButton", new Color(1f, 0.55f, 0.15f, 0.6f), knob);
         Fixed(jab.transform, br, mid, new Vector2(-470, 200), new Vector2(210, 210));
         pb.jabButton = jab.gameObject.AddComponent<Button>(); pb.jabButton.targetGraphic = jab;
+        StyledButton sbJab = jab.gameObject.AddComponent<StyledButton>(); sbJab.look = StyledButton.Look.Orange; sbJab.circle = true; sbJab.alpha = 0.9f; sbJab.silent = true;
         Text jl = MakeText(jab.transform, "Label", "JAB", 40, TextAnchor.MiddleCenter, Color.white, FontStyle.Bold);
         Stretch(jl.transform, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
 
         Image blk = MakeImage(st, "BlockButton", new Color(0.1f, 0.8f, 1f, 0.55f), knob);
         Fixed(blk.transform, br, mid, new Vector2(-470, 450), new Vector2(200, 200));
         pb.blockButton = blk.gameObject.AddComponent<HoldButton>();
+        StyledButton sbBlk = blk.gameObject.AddComponent<StyledButton>(); sbBlk.look = StyledButton.Look.Cyan; sbBlk.circle = true; sbBlk.alpha = 0.9f; sbBlk.silent = true;
         Text bl = MakeText(blk.transform, "Label", "BLOCK", 38, TextAnchor.MiddleCenter, Color.white, FontStyle.Bold);
         Stretch(bl.transform, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
 
@@ -402,6 +380,7 @@ public static class SceneBuilder
             Fixed(cb.transform, mid, mid, new Vector2((i - 1) * 560, -30), new Vector2(500, 600));
             Button bt2 = cb.gameObject.AddComponent<Button>();
             bt2.targetGraphic = cb;
+            StyledButton sbCard = cb.gameObject.AddComponent<StyledButton>(); sbCard.look = StyledButton.Look.Card;
             Text t1 = MakeText(cb.transform, "Title", "CARD", 52, TextAnchor.MiddleCenter, new Color(0.3f, 0.9f, 1f), FontStyle.Bold);
             Stretch(t1.transform, new Vector2(0.05f, 0.55f), new Vector2(0.95f, 0.92f), Vector2.zero, Vector2.zero);
             Text t2 = MakeText(cb.transform, "Desc", "", 38, TextAnchor.UpperCenter, Color.white);
@@ -421,8 +400,12 @@ public static class SceneBuilder
         Fixed(rb.transform, mid, mid, new Vector2(0, -150), new Vector2(460, 130));
         Button rbBtn = rb.gameObject.AddComponent<Button>();
         rbBtn.targetGraphic = rb;
-        Text rbl = MakeText(rb.transform, "Label", "Play again", 50, TextAnchor.MiddleCenter, new Color(0.05f, 0.05f, 0.15f), FontStyle.Bold);
+        StyledButton sbRb = rb.gameObject.AddComponent<StyledButton>(); sbRb.look = StyledButton.Look.Primary; sbRb.pulse = true;
+        Text rbl = MakeText(rb.transform, "Label", "PLAY AGAIN", 50, TextAnchor.MiddleCenter, Color.white, FontStyle.Bold);
         Stretch(rbl.transform, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
+        Text lMenuBtn;
+        Button menuBtn = MenuButton(endImg.transform, "MenuButton", "MAIN MENU", StyledButton.Look.Dark, new Vector2(0, 0), new Vector2(460, 110), 42, false, out lMenuBtn);
+        Fixed(menuBtn.transform, mid, mid, new Vector2(0, -310), new Vector2(460, 110));
         endImg.gameObject.SetActive(false);
 
         // ---- bout logic
@@ -435,6 +418,8 @@ public static class SceneBuilder
         bm.playerNameText = pName; bm.botNameText = bName; bm.timerText = timer; bm.fightText = fightT; bm.centerText = center;
         bm.cardPanel = cardImg.gameObject; bm.cardTitle = cTitles; bm.cardDesc = cDescs; bm.cardButton = cBtns;
         bm.endPanel = endImg.gameObject; bm.endTitle = endTitle; bm.endSub = endSub; bm.restartButton = rbBtn;
+        bm.menuButton = menuBtn; bm.waitForMenu = true;
+        BuildMenu(ct, safe, pb, bf, new[] { pf.gloveL.gameObject, pf.gloveR.gameObject }, round);
 
         EditorSceneManager.SaveScene(scene, ScenePath);
         EditorBuildSettings.scenes = new[] { new EditorBuildSettingsScene(ScenePath, true) };

@@ -12,6 +12,8 @@ public class BoutManager : MonoBehaviour
     public Fighter player, bot;
     public PlayerBoxer pb;
     public BotBoxer botAI;
+    public bool waitForMenu;
+    public Button menuButton;
     public Renderer[] botSkin, botShorts;
     public Material bloodMat;
     public Sprite splatSprite;
@@ -78,7 +80,9 @@ public class BoutManager : MonoBehaviour
         player.opponent = bot;
         bot.opponent = player;
         if (restartButton != null)
-            restartButton.onClick.AddListener(() => SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex));
+            restartButton.onClick.AddListener(() => { MainMenu.skipNext = true; SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex); });
+        if (menuButton != null)
+            menuButton.onClick.AddListener(() => { MainMenu.skipNext = false; SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex); });
         for (int i = 0; i < cardButton.Length; i++)
         {
             int idx = i;
@@ -88,8 +92,11 @@ public class BoutManager : MonoBehaviour
         if (endPanel != null) endPanel.SetActive(false);
         if (playerNameText != null) playerNameText.text = "YOU";
         blood = MakeBlood();
-        StartFight(0);
+        if (!waitForMenu) StartFight(0);
     }
+
+    /// <summary>Called by the main menu when Play is pressed.</summary>
+    public void BeginRun() { StartFight(0); }
 
     ParticleSystem MakeBlood()
     {
@@ -139,6 +146,8 @@ public class BoutManager : MonoBehaviour
         timeLeft = 90f;
         if (botNameText != null) botNameText.text = d.name;
         if (fightText != null) fightText.text = "FIGHT " + (i + 1) + " / " + Opps.Length;
+        if (ArenaShow.I != null) ArenaShow.I.SetNames("YOU", d.name);
+        if (Crowd.I != null) { Crowd.I.SetBase(0.2f + 0.08f * i); Crowd.I.Cheer(0.5f); }
         StartCoroutine(Intro(d.name));
     }
 
@@ -151,6 +160,7 @@ public class BoutManager : MonoBehaviour
         yield return new WaitForSeconds(0.8f);
         Say("FIGHT!", 1f);
         Sfx.Bell(Camera.main.transform.position);
+        if (Crowd.I != null) Crowd.I.Burst(0.7f);
         Fighting = true;
     }
 
@@ -184,8 +194,14 @@ public class BoutManager : MonoBehaviour
     public void OnHit(Fighter victim, Fighter attacker, float dmg, bool blocked, bool heavy)
     {
         Vector3 listener = Camera.main.transform.position;
-        if (blocked) { Sfx.Block(listener); if (victim == player) pb.Shake(0.1f); return; }
+        if (blocked) { Sfx.Block(listener); if (victim == player) pb.Shake(0.1f); if (Crowd.I != null) Crowd.I.Cheer(0.03f); return; }
         Sfx.Punch(listener);
+        if (Crowd.I != null)
+        {
+            Crowd.I.Cheer(heavy ? 0.35f : 0.18f);
+            if (victim == player && heavy) Crowd.I.Gasp();
+            else if (heavy) Crowd.I.Burst(0.6f);
+        }
         if (victim == player)
         {
             pb.Shake(heavy ? 0.6f : 0.3f);
@@ -243,6 +259,8 @@ public class BoutManager : MonoBehaviour
         Fighting = false;
         Say("K.O.!", 2.5f);
         if (loser == player) BotWin();
+        if (Crowd.I != null) Crowd.I.Roar();
+        if (ArenaShow.I != null) ArenaShow.I.Flash();
         Sfx.Bell(Camera.main.transform.position);
         StartCoroutine(AfterFight(loser == bot));
     }

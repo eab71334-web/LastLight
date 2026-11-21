@@ -57,6 +57,7 @@ public class Fighter : MonoBehaviour
         animStart = Time.time;
         animDur = wind * 2f + 0.12f;
         if (Rig != null) Rig.Punch(cross);
+        Sfx.Whoosh(transform.position + Vector3.up * 1.4f);
         return true;
     }
 
