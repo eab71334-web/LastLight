@@ -59,7 +59,7 @@ PRE=add(G,hipsrot=[0,-8,0],spine=[0,-4,0],fistR=[0.03,0.0,-0.10],hips=[0,-0.02,-
 CROSS=add(G,hips=[0,-0.02,0.10],hipsrot=[0,34,0],spine=[6,24,0],head=[0,-34,0],fistR=[0.01,0.02,0.34],elbowR=[-0.3,-0.4,-1],fistL=[0.03,-0.02,-0.08],footpitchR=21,footR=[0.0,0.03,0.02],footyawR=22,footL=[0,0,0.02])
 clip('cross',False,[(0,G,'io'),(0.06,PRE,'io'),(0.16,CROSS,'out'),(0.27,CROSS,'lin'),(0.58,G,'io')])
 
-BLK=add(G,hips=[0,-0.045,-0.02],spine=[10,-4,0],head=[8,-6,0],fistL=[-0.05,0.12,-0.08],fistR=[0.0,0.10,-0.03],elbowL=[0.3,-1,0.3],elbowR=[-0.3,-1,0.3])
+BLK=add(G,hips=[0,-0.045,-0.02],spine=[10,-4,0],head=[8,-6,0],fistL=[-0.07,0.07,-0.04],fistR=[0.07,0.05,0.0],elbowL=[0.0,-1,0.5],elbowR=[0.0,-1,0.5])
 clip('block',False,[(0,G,'io'),(0.14,BLK,'out'),(0.3,BLK,'lin')])
 clip('block_hit',False,[(0,BLK,'io'),(0.05,add(BLK,hips=[0,-0.02,-0.06],spine=[-6,0,0],fistL=[0,0,-0.05],fistR=[0,0,-0.05]),'out'),(0.28,BLK,'io')])
 

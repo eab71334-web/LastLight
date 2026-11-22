@@ -1,6 +1,7 @@
 import numpy as np
 from rig import *
 
+GLOVES=False
 ROLES=['skin','shorts','band','hair','glove','tape','eyew','iris']
 
 def normals(V,T):
@@ -81,10 +82,10 @@ def build(body,rig):
         v4,t4=cylinder(w0+dr*0.012,dr,0.066,0.07); t4=orient(v4,t4,w0+dr*0.012)
         t=orient(v,t,c); t3=orient(v3,t3,th)
         gv.append(v);gt.append(t);gv.append(v3);gt.append(t3);gv.append(v4);gt.append(t4)
-        v2,t2=cylinder(w0-dr*0.015,dr,0.056,0.075); t2=orient(v2,t2,w0-dr*0.015); tv.append(v2);tt.append(t2)
+        v2,t2=cylinder(w0+dr*0.005,dr,0.040,0.085); t2=orient(v2,t2,w0+dr*0.005); tv.append(v2);tt.append(t2)
         gj+= [wi,wi,wi]
         rel=cen-w0; pr=rel@dr; lat=np.linalg.norm(rel-np.outer(pr,dr),axis=1)
-        keep&=~((pr>0.005)&(pr<0.35)&(lat<0.16))
+        if GLOVES: keep&=~((pr>0.005)&(pr<0.35)&(lat<0.16))
     def pack(vs,ts,wb):
         VV=[];TT=[];JJ=[];off=0
         for v,t,b in zip(vs,ts,wb):
@@ -95,7 +96,7 @@ def build(body,rig):
     parts['skin']=(V,N,UV,J,W,T0[keep])
     GV,GT,GJ,GW=pack(gv,gt,gj); 
     cg=GV.mean(0); 
-    parts['glove']=(GV,normals(GV,GT),np.zeros((len(GV),2)),GJ,GW,GT)
+    parts['glove']=(GV,normals(GV,GT),np.zeros((len(GV),2)),GJ,GW,GT if GLOVES else GT[:0])
     TV,TT_,TJ,TW=pack(tv,tt,gj[::3]); parts['tape']=(TV,normals(TV,TT_),np.zeros((len(TV),2)),TJ,TW,TT_)
     # eyes
     ev=[];et=[];ew=[];iv=[];it=[];iw=[]; hb=ix['head']

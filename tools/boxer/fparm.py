@@ -6,6 +6,8 @@ from mesh import *
 def main(out):
     d=make_body(); r=Rig(d); m=build(d,r); V=m['V']; N=m['N']
     sub=dict(m['subs']); b=bytearray(b'FPA1')
+    from rig import PALM_SIGN
+    q0,off0=r.solve({'curl':1.0}); Vp=skin(m,r,q0,off0); Np=normals(Vp,np.concatenate([t for _,t in m['subs']]))
     for s in 'LR':
         wi=r.ix[f'wrist.{s}']; w0=r.rest[wi]; dr=r.rd['la'+s]
         z=dr; x=unit(np.cross([0,1,0],z)); y=np.cross(z,x)
@@ -13,14 +15,12 @@ def main(out):
         def sel(T,mask):
             tri=T[mask]; used=np.unique(tri); rm=-np.ones(len(V),int); rm[used]=np.arange(len(used)); return used,rm[tri]
         Ts=sub['skin']; cs=V[Ts].mean(1); rel=cs-w0; pr=rel@dr; lat=np.linalg.norm(rel-np.outer(pr,dr),axis=1)
-        sk=(pr>-0.38)&(pr<0.01)&(lat<0.10)
-        Tg=np.concatenate([sub['glove'],sub['tape']]); cg=V[Tg].mean(1)
-        gm=np.linalg.norm(cg-w0,axis=1)<0.3
+        sk=(pr>-0.60)&(pr<0.35)&(lat<0.16)
         parts=[]
-        for T,mask in ((Ts,sk),(sub['glove'],(np.linalg.norm(V[sub['glove']].mean(1)-w0,axis=1)<0.3))):
+        for T,mask in ((Ts,sk),(sub['tape'],(np.linalg.norm(V[sub['tape']].mean(1)-w0,axis=1)<0.3))):
             parts.append(sel(T,mask))
         U=np.concatenate([parts[0][0],parts[1][0]]); off=len(parts[0][0])
-        P=(V[U]-w0)@Rm.T; Nn=N[U]@Rm.T
+        P=(Vp[U]-w0)@Rm.T; Nn=Np[U]@Rm.T
         b.extend(struct.pack('<i',len(U))); b.extend(np.asarray(P,'<f4').tobytes()); b.extend(np.asarray(Nn,'<f4').tobytes())
         for k,(u,tri) in enumerate(parts):
             tri=tri+(off if k else 0); b.extend(struct.pack('<i',len(tri))); b.extend(np.asarray(tri.reshape(-1),'<i4').tobytes())

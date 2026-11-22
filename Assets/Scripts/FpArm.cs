@@ -8,7 +8,7 @@ using UnityEngine;
 public class FpArm : MonoBehaviour
 {
     public bool left;
-    public Material skinMat, gloveMat;
+    public Material skinMat, wrapMat;
 
     static Mesh[] cache;
 
@@ -21,14 +21,15 @@ public class FpArm : MonoBehaviour
 
         GameObject rot = new GameObject("FpRot");
         rot.transform.SetParent(transform, false);
-        rot.transform.localRotation = Quaternion.Euler(-26f, left ? 7f : -7f, 0f) * Quaternion.Euler(0f, 0f, left ? 57f : -57f);
+        rot.transform.localScale = Vector3.one * 1.4f;
+        rot.transform.localRotation = Quaternion.Euler(-20f, left ? 7f : -7f, 0f) * Quaternion.Euler(0f, 0f, left ? 52f : -52f);
 
         GameObject go = new GameObject("FpMesh");
         go.transform.SetParent(rot.transform, false);
-        go.transform.localPosition = new Vector3(0f, 0f, -0.115f);
+        go.transform.localPosition = new Vector3(0f, 0f, -0.08f);
         go.AddComponent<MeshFilter>().sharedMesh = m;
         MeshRenderer mr = go.AddComponent<MeshRenderer>();
-        mr.sharedMaterials = new[] { skinMat, gloveMat };
+        mr.sharedMaterials = new[] { skinMat, wrapMat };
         mr.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
         mr.receiveShadows = false;
     }

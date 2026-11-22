@@ -31,6 +31,12 @@ def mat2quat(R):
         s=np.sqrt(1+R[2,2]-R[0,0]-R[1,1])*2; w=(R[1,0]-R[0,1])/s; x=(R[0,2]+R[2,0])/s; y=(R[1,2]+R[2,1])/s; z=s/4
     q=np.array([x,y,z,w]); return q/np.linalg.norm(q)
 
+PALM_SIGN=-1.0
+FIST=[[0,0,0],[80,100,60],[85,105,65],[85,105,65],[80,100,60]]
+THUMB=[35,45,30]
+def rod(a,deg):
+    t=np.radians(deg); k=np.array([[0,-a[2],a[1]],[a[2],0,-a[0]],[-a[1],a[0],0]]); return np.eye(3)+np.sin(t)*k+(1-np.cos(t))*k@k
+
 class Rig:
     def __init__(self, body):
         self.b=body; self.bones=body['bones']; self.n=len(self.bones)
@@ -48,6 +54,18 @@ class Rig:
             self.rd['la'+s]=unit(self.rest[self.ix[f'wrist.{s}']]-self.rest[self.ix[f'lowerarm01.{s}']])
             self.rd['ul'+s]=unit(self.rest[self.ix[f'lowerleg01.{s}']]-self.rest[self.ix[f'upperleg01.{s}']])
             self.rd['ll'+s]=unit(self.rest[self.ix[f'foot.{s}']]-self.rest[self.ix[f'lowerleg01.{s}']])
+        self.fax={}
+        for s in 'LR':
+            rs=self.rest; ixn=self.ix
+            along=unit(rs[ixn[f'finger3-1.{s}']]-rs[ixn[f'wrist.{s}']])
+            across=unit(rs[ixn[f'finger5-1.{s}']]-rs[ixn[f'finger2-1.{s}']])
+            n=unit(np.cross(along,across))*PALM_SIGN
+            for k in range(1,6):
+                for j in (1,2,3):
+                    a=rs[ixn[f'finger{k}-{j}.{s}']]
+                    if j<3: d=rs[ixn[f'finger{k}-{j+1}.{s}']]-a
+                    else: d=a-rs[ixn[f'finger{k}-{j-1}.{s}']]
+                    self.fax[(k,j,s)]=unit(np.cross(unit(d),n))
 
     def fk(self, Rloc, rootpos):
         """Rloc: dict bone->3x3 local rotation (default identity). returns world R list, world pos list"""
@@ -89,6 +107,13 @@ class Rig:
                 Rw[iu]=Rd; 
                 # recompute forearm
                 Rd2=arc(self.rd['la'+s],la); Rloc[il]=Rd.T@Rd2
+        # fists: curl the fingers
+        cu=pose.get('curl',1.0)
+        for s in 'LR':
+            for k in range(1,6):
+                for j in (1,2,3):
+                    ang=(THUMB[j-1] if k==1 else FIST[k-1][j-1])*cu
+                    Rloc[ix[f'finger{k}-{j}.{s}']]=rod(self.fax[(k,j,s)],ang)
         # legs
         Rw,P=self.fk(Rloc,off)
         for s in 'LR':
