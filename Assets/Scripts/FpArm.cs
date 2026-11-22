@@ -11,6 +11,19 @@ public class FpArm : MonoBehaviour
     public Material skinMat, wrapMat;
 
     static Mesh[] cache;
+    Transform rot;
+    public bool Ready { get { return rot != null; } }
+
+    /// <summary>blk 0..1 = guard raised, ext 0..1 = punch extension. Same numbers as the browser preview.</summary>
+    public void SetPose(float blk, float ext)
+    {
+        if (rot == null) return;
+        float sg = left ? -1f : 1f;
+        float pitch = (0.35f + 0.6f * blk) * (1f - ext) + 0.15f * ext;
+        float yaw = sg * ((0.12f + 0.18f * blk) * (1f - ext) + 0.02f * ext);
+        float roll = sg * ((0.6f - 0.3f * blk) * (1f - ext) + 0.9f * ext);
+        rot.localRotation = Quaternion.Euler(-pitch * Mathf.Rad2Deg, -yaw * Mathf.Rad2Deg, 0f) * Quaternion.Euler(0f, 0f, roll * Mathf.Rad2Deg);
+    }
 
     void Awake()
     {
@@ -19,13 +32,14 @@ public class FpArm : MonoBehaviour
 
         foreach (Renderer r in GetComponentsInChildren<Renderer>()) r.enabled = false;
 
-        GameObject rot = new GameObject("FpRot");
-        rot.transform.SetParent(transform, false);
-        rot.transform.localScale = Vector3.one * 1.4f;
-        rot.transform.localRotation = Quaternion.Euler(-20f, left ? 7f : -7f, 0f) * Quaternion.identity;
+        GameObject rotGo = new GameObject("FpRot");
+        rot = rotGo.transform;
+        rot.SetParent(transform, false);
+        rot.localScale = Vector3.one * 1.4f;
+        SetPose(0f, 0f);
 
         GameObject go = new GameObject("FpMesh");
-        go.transform.SetParent(rot.transform, false);
+        go.transform.SetParent(rot, false);
         go.transform.localPosition = new Vector3(0f, 0f, -0.08f);
         go.AddComponent<MeshFilter>().sharedMesh = m;
         MeshRenderer mr = go.AddComponent<MeshRenderer>();

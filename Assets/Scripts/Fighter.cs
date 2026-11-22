@@ -168,6 +168,16 @@ public class Fighter : MonoBehaviour
         if (hp <= 0f) { hp = 0f; Down = true; Blocking = false; if (Rig != null) Rig.Knockout(); BoutManager.I.OnKnockout(this); }
     }
 
+    float blk;
+
+    Vector3 FpTarget(float sg, float ex)
+    {
+        float x = sg * ((0.24f - 0.15f * blk) * (1f - ex) + 0.07f * ex);
+        float y = (-0.10f + 0.13f * blk) * (1f - ex) - 0.02f * ex;
+        float z = (0.52f - 0.02f * blk) * (1f - ex) + (0.52f + reachZ) * ex;
+        return new Vector3(x, y, z);
+    }
+
     void AnimateGloves()
     {
         if (gloveL == null || gloveR == null) return;
@@ -176,6 +186,17 @@ public class Fighter : MonoBehaviour
         {
             float t = (Time.time - animStart) / animDur;
             if (t >= 1f) animDur = 0f; else a = Mathf.Sin(t * Mathf.PI);
+        }
+        FpArm fl = gloveL.GetComponent<FpArm>(), fr = gloveR.GetComponent<FpArm>();
+        if (fl != null && fl.Ready && fr != null && fr.Ready)
+        {
+            blk += ((Blocking ? 1f : 0f) - blk) * Mathf.Min(1f, Time.deltaTime * 14f);
+            float exL = animLeft ? a : 0f, exR = animLeft ? 0f : a;
+            float k2 = Mathf.Min(1f, Time.deltaTime * 30f);
+            gloveL.localPosition = Vector3.Lerp(gloveL.localPosition, FpTarget(-1f, exL), k2);
+            gloveR.localPosition = Vector3.Lerp(gloveR.localPosition, FpTarget(1f, exR), k2);
+            fl.SetPose(blk, exL); fr.SetPose(blk, exR);
+            return;
         }
         Vector3 tl = restL, tr = restR;
         if (Blocking)
