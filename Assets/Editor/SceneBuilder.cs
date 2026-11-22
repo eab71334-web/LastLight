@@ -240,6 +240,10 @@ public static partial class SceneBuilder
         pb.fighter = pf; pb.cam = cam.transform;
         pf.gloveL = MakeGlove(cam.transform, "GloveL", new Vector3(-0.3f, -0.32f, 0.55f), glove, skin, null, 0.7f);
         pf.gloveR = MakeGlove(cam.transform, "GloveR", new Vector3(0.3f, -0.32f, 0.55f), glove, skin, null, 0.7f);
+        pf.gloveL.localPosition = new Vector3(-0.3f, -0.22f, 0.62f);
+        pf.gloveR.localPosition = new Vector3(0.3f, -0.22f, 0.62f);
+        FpArm fal = pf.gloveL.gameObject.AddComponent<FpArm>(); fal.left = true; fal.skinMat = skin; fal.gloveMat = glove;
+        FpArm far = pf.gloveR.gameObject.AddComponent<FpArm>(); far.left = false; far.skinMat = skin; far.gloveMat = glove;
 
         // ---- opponent
         GameObject botGO = new GameObject("Opponent");

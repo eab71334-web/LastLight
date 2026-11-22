@@ -65,6 +65,7 @@ def build(body,rig):
     # fix: hair only on head
     # gloves, tape
     gv=[];gt=[];gj=[];gw=[];tv=[];tt=[];tj=[];tw=[]
+    keep=np.ones(len(T0),bool)
     for s in 'LR':
         wi=ix[f'wrist.{s}']; w0=rig.rest[wi]; dr=rig.rd['la'+s]
         side=unit(np.cross(dr,[0,1,0])); up=np.cross(side,dr)
@@ -78,9 +79,12 @@ def build(body,rig):
         v3,t3=uvsphere(th,np.array([dr*0.060,up*0.040,side*0.040]),14,10)
         # cuff: thick cylinder over the wrist
         v4,t4=cylinder(w0+dr*0.012,dr,0.066,0.07); t4=orient(v4,t4,w0+dr*0.012)
+        t=orient(v,t,c); t3=orient(v3,t3,th)
         gv.append(v);gt.append(t);gv.append(v3);gt.append(t3);gv.append(v4);gt.append(t4)
         v2,t2=cylinder(w0-dr*0.015,dr,0.056,0.075); t2=orient(v2,t2,w0-dr*0.015); tv.append(v2);tt.append(t2)
         gj+= [wi,wi,wi]
+        rel=cen-w0; pr=rel@dr; lat=np.linalg.norm(rel-np.outer(pr,dr),axis=1)
+        keep&=~((pr>0.005)&(pr<0.35)&(lat<0.16))
     def pack(vs,ts,wb):
         VV=[];TT=[];JJ=[];off=0
         for v,t,b in zip(vs,ts,wb):
@@ -88,6 +92,7 @@ def build(body,rig):
         VV=np.concatenate(VV);TT=np.concatenate(TT)
         Jx=np.zeros((len(VV),4),int); Wx=np.zeros((len(VV),4)); Jx[:,0]=JJ; Wx[:,0]=1
         return VV,TT,Jx,Wx
+    parts['skin']=(V,N,UV,J,W,T0[keep])
     GV,GT,GJ,GW=pack(gv,gt,gj); 
     cg=GV.mean(0); 
     parts['glove']=(GV,normals(GV,GT),np.zeros((len(GV),2)),GJ,GW,GT)
