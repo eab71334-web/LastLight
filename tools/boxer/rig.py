@@ -122,7 +122,7 @@ class Rig:
             for k in range(1,6):
                 for j in (1,2,3):
                     if k==1:
-                        Rt=rod(self.palm[s]*(1.0 if s=='L' else -1.0),60*cu) if j==1 else (rod(np.array([-1.0,0,0]),20*cu) if j==2 else np.eye(3))
+                        Rt=rod(self.palm[s]*(-1.0 if s=='L' else 1.0),60*cu) if j==1 else (rod(np.array([-1.0,0,0]),20*cu) if j==2 else np.eye(3))
                         Rloc[ix[f'finger1-{j}.{s}']]=Rt
                     else:
                         Rloc[ix[f'finger{k}-{j}.{s}']]=rod(self.fax[(k,j,s)],FIST[k-1][j-1]*cu)
