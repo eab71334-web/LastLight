@@ -135,7 +135,7 @@ public class BoutManager : MonoBehaviour
         foreach (Renderer r in botSkin) r.material.color = d.skin;
         foreach (Renderer r in botShorts) r.material.color = d.shorts;
         BoxerRig br = bot.GetComponent<BoxerRig>();
-        if (br != null) br.Tint(d.skin, d.shorts, Color.Lerp(d.shorts, Color.black, 0.55f));
+        if (br != null) br.Tint(d.skin, d.shorts, Color.Lerp(d.shorts, Color.black, 0.2f));
 
         float keep = i == 0 ? player.maxHp : Mathf.Min(player.maxHp, player.hp + player.maxHp * healPct);
         player.ResetFighter();

@@ -69,11 +69,18 @@ def build(body,rig):
         wi=ix[f'wrist.{s}']; w0=rig.rest[wi]; dr=rig.rd['la'+s]
         side=unit(np.cross(dr,[0,1,0])); up=np.cross(side,dr)
         c=w0+dr*0.10
-        ax=np.array([dr*0.125,up*0.088,side*0.082])
-        v,t=uvsphere(c,ax); 
-        gv.append(v);gt.append(t)
+        c=w0+dr*0.115
+        ax=np.array([dr*0.150,up*0.104,side*0.098])
+        v,t=uvsphere(c,ax)
+        # thumb: small ellipsoid on the inner side, fused with the fist
+        sg=1.0 if s=='L' else -1.0
+        th=c+dr*0.03+side*(-sg)*0.085+up*0.02
+        v3,t3=uvsphere(th,np.array([dr*0.060,up*0.040,side*0.040]),14,10)
+        # cuff: thick cylinder over the wrist
+        v4,t4=cylinder(w0+dr*0.012,dr,0.066,0.07); t4=orient(v4,t4,w0+dr*0.012)
+        gv.append(v);gt.append(t);gv.append(v3);gt.append(t3);gv.append(v4);gt.append(t4)
         v2,t2=cylinder(w0-dr*0.015,dr,0.056,0.075); t2=orient(v2,t2,w0-dr*0.015); tv.append(v2);tt.append(t2)
-        gj.append(wi);
+        gj+= [wi,wi,wi]
     def pack(vs,ts,wb):
         VV=[];TT=[];JJ=[];off=0
         for v,t,b in zip(vs,ts,wb):
@@ -84,7 +91,7 @@ def build(body,rig):
     GV,GT,GJ,GW=pack(gv,gt,gj); 
     cg=GV.mean(0); 
     parts['glove']=(GV,normals(GV,GT),np.zeros((len(GV),2)),GJ,GW,GT)
-    TV,TT_,TJ,TW=pack(tv,tt,gj); parts['tape']=(TV,normals(TV,TT_),np.zeros((len(TV),2)),TJ,TW,TT_)
+    TV,TT_,TJ,TW=pack(tv,tt,gj[::3]); parts['tape']=(TV,normals(TV,TT_),np.zeros((len(TV),2)),TJ,TW,TT_)
     # eyes
     ev=[];et=[];ew=[];iv=[];it=[];iw=[]; hb=ix['head']
     for s in 'LR':
