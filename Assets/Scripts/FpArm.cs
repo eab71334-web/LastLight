@@ -22,7 +22,7 @@ public class FpArm : MonoBehaviour
         GameObject rot = new GameObject("FpRot");
         rot.transform.SetParent(transform, false);
         rot.transform.localScale = Vector3.one * 1.4f;
-        rot.transform.localRotation = Quaternion.Euler(-20f, left ? 7f : -7f, 0f) * Quaternion.Euler(0f, 0f, left ? 52f : -52f);
+        rot.transform.localRotation = Quaternion.Euler(-20f, left ? 7f : -7f, 0f) * Quaternion.identity;
 
         GameObject go = new GameObject("FpMesh");
         go.transform.SetParent(rot.transform, false);
@@ -48,8 +48,8 @@ public class FpArm : MonoBehaviour
                 {
                     int n = br.ReadInt32();
                     Vector3[] v = new Vector3[n], nr = new Vector3[n];
-                    for (int i = 0; i < n; i++) v[i] = new Vector3(br.ReadSingle(), br.ReadSingle(), br.ReadSingle());
-                    for (int i = 0; i < n; i++) nr[i] = new Vector3(br.ReadSingle(), br.ReadSingle(), br.ReadSingle());
+                    for (int i = 0; i < n; i++) v[i] = new Vector3(-br.ReadSingle(), br.ReadSingle(), br.ReadSingle());
+                    for (int i = 0; i < n; i++) nr[i] = new Vector3(-br.ReadSingle(), br.ReadSingle(), br.ReadSingle());
                     Mesh m = new Mesh();
                     m.name = "FpArm" + s;
                     m.vertices = v;
@@ -62,7 +62,7 @@ public class FpArm : MonoBehaviour
                         for (int i = 0; i < c; i++)
                         {
                             int a = br.ReadInt32(), b = br.ReadInt32(), d = br.ReadInt32();
-                            t[i * 3] = a; t[i * 3 + 1] = d; t[i * 3 + 2] = b;   // reversed winding (right-handed data into Unity)
+                            t[i * 3] = a; t[i * 3 + 1] = d; t[i * 3 + 2] = b;   // x mirrored + reversed winding, same convention as boxer.bytes
                         }
                         m.SetTriangles(t, k);
                     }

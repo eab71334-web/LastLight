@@ -108,7 +108,9 @@ public class BoxerRig : MonoBehaviour
     enum Mode { Loop, OneShot, Hold }
     Mode mode = Mode.Loop;
     bool blocking, ko, won;
-    float moveUntil;
+    Vector3 lastPos, localVel;
+    bool stepping;
+    float stepScale = 1f;
 
     Quaternion[] outRot, fadeFrom;
     Vector3 outRoot, fadeRootFrom;
@@ -209,7 +211,7 @@ public class BoxerRig : MonoBehaviour
     }
 
     // ------------------------------------------------------------ commands from Fighter / BoutManager
-    public void NoteMove() { moveUntil = Time.time + 0.12f; }
+    public void NoteMove() { }   // movement is now read from the transform (see UpdateStep)
 
     public void SetBlock(bool b)
     {
@@ -245,7 +247,29 @@ public class BoxerRig : MonoBehaviour
     // ------------------------------------------------------------ playback
     void Baseline(float fade)
     {
-        Play(Time.time < moveUntil ? "shuffle" : "idle", Mode.Loop, fade);
+        Play(BaseName(), Mode.Loop, fade);
+    }
+
+    string BaseName()
+    {
+        if (!stepping) return "idle";
+        if (Mathf.Abs(localVel.x) > Mathf.Abs(localVel.z)) return localVel.x > 0f ? "step_ru" : "step_lu";   // unity +x = rig -x
+        return localVel.z >= 0f ? "step_f" : "step_b";
+    }
+
+    // Reads how the fighter really moves, picks the matching footwork clip and matches its speed to the ground speed.
+    void UpdateStep(float dt)
+    {
+        Vector3 v = dt > 1e-5f ? (transform.position - lastPos) / dt : Vector3.zero;
+        lastPos = transform.position;
+        v.y = 0f;
+        Vector3 lv = transform.InverseTransformDirection(v);
+        if (lv.magnitude > 8f) lv = Vector3.zero;                       // teleports (restart) are not walking
+        localVel = Vector3.Lerp(localVel, lv, 1f - Mathf.Exp(-12f * dt));
+        float sp = localVel.magnitude;
+        stepping = stepping ? sp > 0.22f : sp > 0.4f;                    // hysteresis
+        float vrel = Mathf.Abs(localVel.x) > Mathf.Abs(localVel.z) ? 0.97f : 1.3f;
+        stepScale = Mathf.Clamp(sp / vrel, 0.6f, 2f);
     }
 
     void Play(string name, Mode m, float fade)
@@ -263,13 +287,15 @@ public class BoxerRig : MonoBehaviour
         if (!Built || cur == null) return;
         float dt = Time.deltaTime;
 
-        if (mode == Mode.Loop && !won && (cur.name == "idle" || cur.name == "shuffle"))
+        UpdateStep(dt);
+        bool isBase = cur.name == "idle" || cur.name.StartsWith("step_");
+        if (mode == Mode.Loop && !won && isBase)
         {
-            string want = Time.time < moveUntil ? "shuffle" : "idle";
+            string want = BaseName();
             if (want != cur.name) Play(want, Mode.Loop, 0.15f);
         }
 
-        t += dt;
+        t += cur.name.StartsWith("step_") ? dt * stepScale : dt;
         if (mode == Mode.OneShot && t >= cur.T)
         {
             if (blocking) Play("block", Mode.Hold, 0.08f); else Baseline(0.1f);

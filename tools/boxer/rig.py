@@ -59,7 +59,8 @@ class Rig:
             rs=self.rest; ixn=self.ix
             along=unit(rs[ixn[f'finger3-1.{s}']]-rs[ixn[f'wrist.{s}']])
             across=unit(rs[ixn[f'finger5-1.{s}']]-rs[ixn[f'finger2-1.{s}']])
-            n=unit(np.cross(along,across))*PALM_SIGN
+            n=unit(np.cross(along,across))*PALM_SIGN*(1.0 if s=='L' else -1.0)
+            self.palm=getattr(self,'palm',{}); self.palm[s]=n
             for k in range(1,6):
                 for j in (1,2,3):
                     a=rs[ixn[f'finger{k}-{j}.{s}']]
@@ -107,13 +108,24 @@ class Rig:
                 Rw[iu]=Rd; 
                 # recompute forearm
                 Rd2=arc(self.rd['la'+s],la); Rloc[il]=Rd.T@Rd2
+                # auto wrist roll: palm faces the head near the guard, faces down when the arm is extended
+                ext=np.linalg.norm(Tn-chest); w=min(max((ext-0.30)/0.25,0),1)
+                th=unit((1-w)*unit(P[ix['head']]-Tn)+w*np.array([0,-1.0,0]))
+                nw=Rd2@self.palm[s]; pa=lambda v: v-la*(v@la)
+                u1=pa(nw); u2=pa(th)
+                if np.linalg.norm(u1)>1e-6 and np.linalg.norm(u2)>1e-6:
+                    u1=unit(u1); u2=unit(u2); ang=np.degrees(np.arctan2(la@np.cross(u1,u2),u1@u2))
+                    Rloc[ix[f'wrist.{s}']]=Rd2.T@rod(la,ang)@Rd2
         # fists: curl the fingers
         cu=pose.get('curl',1.0)
         for s in 'LR':
             for k in range(1,6):
                 for j in (1,2,3):
-                    ang=(THUMB[j-1] if k==1 else FIST[k-1][j-1])*cu
-                    Rloc[ix[f'finger{k}-{j}.{s}']]=rod(self.fax[(k,j,s)],ang)
+                    if k==1:
+                        Rt=rod(self.palm[s]*(1.0 if s=='L' else -1.0),60*cu) if j==1 else (rod(np.array([-1.0,0,0]),20*cu) if j==2 else np.eye(3))
+                        Rloc[ix[f'finger1-{j}.{s}']]=Rt
+                    else:
+                        Rloc[ix[f'finger{k}-{j}.{s}']]=rod(self.fax[(k,j,s)],FIST[k-1][j-1]*cu)
         # legs
         Rw,P=self.fk(Rloc,off)
         for s in 'LR':

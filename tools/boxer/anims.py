@@ -52,6 +52,24 @@ def shuffle_keys(T=0.64,N=16,A=0.13,h=0.055):
     return ks
 clip('shuffle',True,shuffle_keys())
 
+def step_keys(D,T=0.8,N=20,A=0.26,h=0.06):
+    """Directional footwork. D=(dx,dz) travel direction in rig space; feet slide against it while planted, then swing."""
+    dx,dz=D; ks=[]
+    for i in range(N+1):
+        t=T*i/N; ph=i/N
+        sl,yl=foot(ph,0.0,A,h); sr,yr=foot(ph+0.5,0.0,A,h)
+        bob=-0.012-0.016*abs(np.sin(2*np.pi*ph))
+        lean=-3.0*dz   # slight lean into travel
+        p=add(G,hips=[0,bob,0],spine=[lean+1.5*np.sin(4*np.pi*ph),2*np.sin(2*np.pi*ph),0])
+        p['footL']=[0.17+dx*sl,yl,0.30+dz*sl]; p['footR']=[-0.14+dx*sr,yr,-0.22+dz*sr]
+        p['footpitchR']=14+10*(yr>0.01)
+        ks.append((t,p,'lin'))
+    return ks
+clip('step_f',True,step_keys((0,1)))
+clip('step_b',True,step_keys((0,-1)))
+clip('step_lu',True,step_keys((1,0),A=0.20))
+clip('step_ru',True,step_keys((-1,0),A=0.20))
+
 JAB=add(G,hips=[0,-0.02,0.07],hipsrot=[0,14,0],spine=[2,6,0],head=[-2,-10,0],fistL=[-0.07,0.04,0.28],elbowL=[0.2,-0.3,-1],footL=[0,0,0.06],fistR=[0.04,0.03,0.0])
 clip('jab',False,[(0,G,'io'),(0.09,JAB,'out'),(0.17,JAB,'lin'),(0.40,G,'io')])
 

@@ -3,6 +3,7 @@ using UnityEngine;
 /// <summary>Simple boxing AI: keeps distance, strafes, throws combos, sometimes blocks.</summary>
 public class BotBoxer : MonoBehaviour
 {
+    Vector3 curMove;
     public Fighter fighter;
     public float aggression = 0.5f;   // 0..1 how often it attacks
     public float reaction = 0.3f;     // 0..1 chance to block an incoming punch
@@ -49,7 +50,8 @@ public class BotBoxer : MonoBehaviour
             move += right * strafeDir * 0.55f;
         }
         if (move.sqrMagnitude > 1f) move.Normalize();
-        fighter.Move(move, dt);
+        curMove = Vector3.MoveTowards(curMove, move, 4f * dt);   // accelerate smoothly, no sudden direction flips
+        fighter.Move(curMove, dt);
 
         // attack
         if (!retreat && !fighter.Blocking && dist < 1.75f && Time.time >= nextAttack && fighter.CanAct)

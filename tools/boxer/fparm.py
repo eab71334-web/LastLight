@@ -21,6 +21,10 @@ def main(out):
             parts.append(sel(T,mask))
         U=np.concatenate([parts[0][0],parts[1][0]]); off=len(parts[0][0])
         P=(Vp[U]-w0)@Rm.T; Nn=Np[U]@Rm.T
+        # bake roll: palm faces inward (local -x for L, +x for R) so the viewer needs no extra roll
+        nl=Rm@r.palm[s]; cur=np.arctan2(nl[1],nl[0]); tgt=np.pi if s=='L' else 0.0; phi=tgt-cur
+        c,sn=np.cos(phi),np.sin(phi); Rz=np.array([[c,-sn,0],[sn,c,0],[0,0,1]])
+        P=P@Rz.T; Nn=Nn@Rz.T
         b.extend(struct.pack('<i',len(U))); b.extend(np.asarray(P,'<f4').tobytes()); b.extend(np.asarray(Nn,'<f4').tobytes())
         for k,(u,tri) in enumerate(parts):
             tri=tri+(off if k else 0); b.extend(struct.pack('<i',len(tri))); b.extend(np.asarray(tri.reshape(-1),'<i4').tobytes())

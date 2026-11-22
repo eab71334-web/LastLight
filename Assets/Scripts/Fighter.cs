@@ -10,7 +10,7 @@ public class Fighter : MonoBehaviour
     public Fighter opponent;
     public float maxHp = 100f, hp = 100f;
     public float maxStamina = 100f, stamina = 100f;
-    public float damageMul = 1f, cooldownMul = 1f, staminaRegen = 18f, blockCost = 1f, moveSpeed = 3.4f;
+    public float damageMul = 1f, cooldownMul = 1f, staminaRegen = 18f, blockCost = 1f, moveSpeed = 1.7f;
     public Transform gloveL, gloveR, head;
     public float reachZ = 0.75f;
 
