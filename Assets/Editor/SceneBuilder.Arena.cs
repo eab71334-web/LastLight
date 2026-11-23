@@ -307,7 +307,7 @@ public static partial class SceneBuilder
         Text hTitle = MakeText(hCard.transform, "Title", "HOW TO PLAY", 72, TextAnchor.MiddleCenter, Color.white, FontStyle.Bold);
         Fixed(hTitle.transform, new Vector2(0.5f, 1), new Vector2(0.5f, 1), new Vector2(0, -90), new Vector2(1100, 110));
         Text hBody = MakeText(hCard.transform, "Body",
-            "LEFT STICK  -  WALK ANYWHERE IN THE RING\nDRAG ON THE SCREEN  -  LOOK AROUND\nJAB  -  FAST, LIGHT PUNCH\nCROSS  -  SLOWER, HEAVY PUNCH\nBLOCK  -  HOLD TO GUARD (USES STAMINA)\n\nBEAT 5 FIGHTERS IN A ROW.\nPICK AN UPGRADE CARD AFTER EVERY WIN.",
+            "LEFT STICK  -  WALK ANYWHERE IN THE RING\nDRAG ON THE SCREEN  -  LOOK AROUND\nRIGHT STICK  -  FLICK UP: STRAIGHT, SIDEWAYS: HOOK, DOWN: UPPERCUT\nFLICK FAST FOR A HARDER PUNCH\nHAND BUTTON  -  SWITCH PUNCHING HAND\nDUCK  -  HOLD TO DUCK, THEN UPPERCUT THE NOSE\nBLOCK  -  HOLD TO GUARD (USES STAMINA)\n\nBEAT 5 FIGHTERS IN A ROW.\nPICK AN UPGRADE CARD AFTER EVERY WIN.",
             40, TextAnchor.UpperLeft, new Color(0.88f, 0.92f, 1f), FontStyle.Bold);
         Stretch(hBody.transform, new Vector2(0.08f, 0.2f), new Vector2(0.92f, 0.82f), Vector2.zero, Vector2.zero);
         Text lBack3;

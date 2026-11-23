@@ -15,6 +15,7 @@ public class Fighter : MonoBehaviour
     public float reachZ = 0.75f;
 
     public bool Blocking { get; set; }
+    public bool Ducking { get; set; }
     public bool Down { get; private set; }
     public float Stagger { get { return stagger; } }
     public bool IsWinding { get { return pendingKind != 0; } }
@@ -26,6 +27,7 @@ public class Fighter : MonoBehaviour
     float stagger, nextPunch, impactAt, animStart, animDur, fallT, fallYaw;
     int pendingKind; // 0 none, 1 jab, 2 cross
     bool animLeft;
+    int ptype; float ppower = 0.5f; bool plegend;
     Vector3 restL, restR;
     BoxerRig rig; bool rigTried;
     BoxerRig Rig { get { if (!rigTried) { rig = GetComponent<BoxerRig>(); rigTried = true; } return rig; } }
@@ -43,17 +45,22 @@ public class Fighter : MonoBehaviour
         if (Rig != null) Rig.ResetPose();
     }
 
-    public bool TryPunch(bool cross)
+    public bool TryPunch(bool cross) { return Throw(0, !cross, 0.5f, false); }
+
+    /// <summary>type 0 straight, 1 hook, 2 uppercut. power 0..1 comes from how fast the stick was flicked.</summary>
+    public bool Throw(int type, bool left, float power, bool legend)
     {
         if (!CanAct || Blocking || pendingKind != 0 || Time.time < nextPunch) return false;
-        float cost = cross ? 15f : 8f;
+        bool cross = type != 0 || !left;   // hooks and uppercuts always count as heavy
+        float cost = type == 0 ? (cross ? 15f : 8f) : 14f + (type == 2 ? 2f : 0f);
         if (stamina < cost) return false;
         stamina -= cost;
+        ptype = type; ppower = power; plegend = legend;
         pendingKind = cross ? 2 : 1;
-        float wind = cross ? 0.16f : 0.09f;
+        float wind = type == 0 ? (cross ? 0.16f : 0.09f) : (type == 1 ? 0.2f : 0.22f);
         impactAt = Time.time + wind;
-        nextPunch = Time.time + (cross ? 0.6f : 0.32f) * cooldownMul;
-        animLeft = !cross;
+        nextPunch = Time.time + (type == 0 ? (cross ? 0.6f : 0.32f) : 0.7f) * cooldownMul;
+        animLeft = left;
         animStart = Time.time;
         animDur = wind * 2f + 0.12f;
         if (Rig != null) Rig.Punch(cross);
@@ -65,7 +72,7 @@ public class Fighter : MonoBehaviour
     {
         if (!CanAct) return;
         if (Rig != null && dir.sqrMagnitude > 0.01f) Rig.NoteMove();
-        float sp = moveSpeed * (Blocking ? 0.5f : 1f);
+        float sp = moveSpeed * (Blocking ? 0.5f : 1f) * (Ducking ? 0.6f : 1f);
         transform.position += dir * sp * dt;
         Separate();
         ClampToRing();
@@ -135,14 +142,21 @@ public class Fighter : MonoBehaviour
         bool cross = pendingKind == 2;
         Vector3 to = opponent.transform.position - transform.position;
         to.y = 0f;
-        if (to.magnitude > (cross ? 1.85f : 1.7f)) return;
-        if (Vector3.Angle(transform.forward, to) > 55f) return;
-        opponent.ReceiveHit((cross ? 13f : 7f) * damageMul, this, cross);
+        float range = ptype == 0 ? (cross ? 1.85f : 1.7f) : (ptype == 1 ? 1.55f : 1.4f);
+        float cone = ptype == 0 ? 55f : (ptype == 1 ? 75f : 45f);
+        if (to.magnitude > range) return;
+        if (Vector3.Angle(transform.forward, to) > cone) return;
+        float baseDmg = ptype == 0 ? (cross ? 13f : 7f) : (ptype == 1 ? 12f : 15f);
+        float dmg = baseDmg * damageMul * (0.75f + 0.5f * ppower);
+        if (ptype == 2 && Ducking) dmg *= 1.25f;      // nose shot from below
+        if (plegend) dmg *= 1.6f;
+        opponent.ReceiveHit(dmg, this, cross, ptype, ppower, plegend);
     }
 
-    public void ReceiveHit(float dmg, Fighter from, bool heavy)
+    public void ReceiveHit(float dmg, Fighter from, bool heavy, int type = 0, float power = 0.5f, bool legend = false)
     {
         if (Down) return;
+        if (Ducking && type == 0 && Random.value < 0.6f) { Sfx.Whoosh(transform.position + Vector3.up * 1.2f); return; }   // ducked under a straight
         Vector3 away = transform.position - from.transform.position;
         away.y = 0f;
         away = away.sqrMagnitude > 0.0001f ? away.normalized : -transform.forward;
@@ -165,18 +179,24 @@ public class Fighter : MonoBehaviour
             if (Rig != null) { Rig.Hit(false, heavy); Rig.Impulse(away, heavy ? 1f : 0.55f); }
         }
         ClampToRing();
-        BoutManager.I.OnHit(this, from, dmg, blocked, heavy);
+        BoutManager.I.OnHit(this, from, dmg, blocked, heavy, type, power, legend);
         if (hp <= 0f) { hp = 0f; Down = true; Blocking = false; if (Rig != null) Rig.Knockout(); BoutManager.I.OnKnockout(this); }
     }
 
     float blk;
 
-    Vector3 FpTarget(float sg, float ex)
+    Vector3 FpTarget(float sg, float ex, int type)
     {
-        float x = sg * ((0.24f - 0.15f * blk) * (1f - ex) + 0.07f * ex);
-        float y = (-0.10f + 0.13f * blk) * (1f - ex) - 0.02f * ex;
-        float z = (0.52f - 0.02f * blk) * (1f - ex) + (0.52f + reachZ) * ex;
-        return new Vector3(x, y, z);
+        Vector3 g = new Vector3(sg * (0.24f - 0.15f * blk), -0.10f + 0.13f * blk, 0.52f - 0.02f * blk);
+        Vector3 e;
+        if (type == 1) e = new Vector3(-sg * 0.10f, 0.0f, 0.50f + reachZ * 0.55f);
+        else if (type == 2) e = new Vector3(sg * 0.03f, 0.10f, 0.45f + reachZ * 0.5f);
+        else e = new Vector3(sg * 0.07f, -0.02f, 0.52f + reachZ);
+        Vector3 p = Vector3.Lerp(g, e, ex);
+        float arc = 4f * ex * (1f - ex);
+        if (type == 1) p.x += sg * 0.32f * arc;      // hook sweeps in from the side
+        if (type == 2) p.y -= 0.40f * arc;           // uppercut dips then rises
+        return p;
     }
 
     void AnimateGloves()
@@ -194,9 +214,9 @@ public class Fighter : MonoBehaviour
             blk += ((Blocking ? 1f : 0f) - blk) * Mathf.Min(1f, Time.deltaTime * 14f);
             float exL = animLeft ? a : 0f, exR = animLeft ? 0f : a;
             float k2 = Mathf.Min(1f, Time.deltaTime * 30f);
-            gloveL.localPosition = Vector3.Lerp(gloveL.localPosition, FpTarget(-1f, exL), k2);
-            gloveR.localPosition = Vector3.Lerp(gloveR.localPosition, FpTarget(1f, exR), k2);
-            fl.SetPose(blk, exL); fr.SetPose(blk, exR);
+            gloveL.localPosition = Vector3.Lerp(gloveL.localPosition, FpTarget(-1f, exL, ptype), k2);
+            gloveR.localPosition = Vector3.Lerp(gloveR.localPosition, FpTarget(1f, exR, ptype), k2);
+            fl.SetPose(blk, exL, ptype); fr.SetPose(blk, exR, ptype);
             return;
         }
         Vector3 tl = restL, tr = restR;

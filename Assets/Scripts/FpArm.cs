@@ -15,13 +15,15 @@ public class FpArm : MonoBehaviour
     public bool Ready { get { return rot != null; } }
 
     /// <summary>blk 0..1 = guard raised, ext 0..1 = punch extension. Same numbers as the browser preview.</summary>
-    public void SetPose(float blk, float ext)
+    public void SetPose(float blk, float ext, int type = 0)
     {
         if (rot == null) return;
         float sg = left ? -1f : 1f;
-        float pitch = (0.35f + 0.6f * blk) * (1f - ext) + 0.15f * ext;
-        float yaw = sg * ((0.12f + 0.18f * blk) * (1f - ext) + 0.02f * ext);
-        float roll = sg * ((0.6f - 0.3f * blk) * (1f - ext) + 0.9f * ext);
+        // end pose per punch type: 0 straight, 1 hook (knuckles turned in), 2 uppercut (fist tipped up)
+        float pE = type == 2 ? -0.35f : 0.15f, yE = type == 1 ? -0.30f : 0.02f, rE = type == 1 ? 1.5f : (type == 2 ? 0.35f : 0.9f);
+        float pitch = (0.35f + 0.6f * blk) * (1f - ext) + pE * ext;
+        float yaw = sg * ((0.12f + 0.18f * blk) * (1f - ext) + yE * ext);
+        float roll = sg * ((0.6f - 0.3f * blk) * (1f - ext) + rE * ext);
         rot.localRotation = Quaternion.Euler(-pitch * Mathf.Rad2Deg, -yaw * Mathf.Rad2Deg, 0f) * Quaternion.Euler(0f, 0f, roll * Mathf.Rad2Deg);
     }
 

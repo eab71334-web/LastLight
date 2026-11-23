@@ -192,7 +192,28 @@ public class BoutManager : MonoBehaviour
     }
 
     // ------------------------------------------------------------ hits and knockouts
-    public void OnHit(Fighter victim, Fighter attacker, float dmg, bool blocked, bool heavy)
+    Coroutine slow;
+    /// <summary>Slow motion for a big hit. realSeconds is real time, scale is the game speed.</summary>
+    public void SlowMo(float realSeconds, float scale)
+    {
+        if (slow != null) StopCoroutine(slow);
+        slow = StartCoroutine(SlowRoutine(realSeconds, scale));
+    }
+
+    IEnumerator SlowRoutine(float realSeconds, float scale)
+    {
+        Time.timeScale = scale;
+        Time.fixedDeltaTime = 0.02f * scale;
+        float t = 0f;
+        while (t < realSeconds) { t += Time.unscaledDeltaTime; yield return null; }
+        Time.timeScale = 1f;
+        Time.fixedDeltaTime = 0.02f;
+        slow = null;
+    }
+
+    void OnDestroy() { Time.timeScale = 1f; Time.fixedDeltaTime = 0.02f; }
+
+    public void OnHit(Fighter victim, Fighter attacker, float dmg, bool blocked, bool heavy, int type = 0, float power = 0.5f, bool legend = false)
     {
         Vector3 listener = Camera.main.transform.position;
         if (blocked) { Sfx.Block(listener); if (victim == player) pb.Shake(0.1f); if (Crowd.I != null) Crowd.I.Cheer(0.03f); return; }
@@ -213,8 +234,25 @@ public class BoutManager : MonoBehaviour
         else
         {
             Vector3 p = victim.head != null ? victim.head.position : victim.transform.position + Vector3.up * 1.7f;
+            bool ko = victim.hp <= 0f;
+            if (attacker == player && ko) legend = true;          // the finishing blow is always a big moment
             blood.transform.position = p;
-            blood.Emit(heavy ? 26 : 12);
+            int n = Mathf.RoundToInt((heavy ? 26 : 12) * (0.6f + power));
+            if (legend) n = 110;
+            blood.Emit(n);
+            Vector3 away = victim.transform.position - attacker.transform.position; away.y = 0f;
+            away = away.sqrMagnitude > 0.0001f ? away.normalized : Vector3.forward;
+            int teeth = legend ? Random.Range(3, 6) : (type == 2 && power > 0.7f ? Random.Range(1, 3) : 0);
+            for (int k = 0; k < teeth; k++)
+                Gib.Spawn(p, away * Random.Range(1.5f, 4f) + Vector3.up * Random.Range(1.5f, 3.5f) + Random.insideUnitSphere * 0.8f, 0);
+            if (legend) Gib.Spawn(p, away * 3f + Vector3.up * 3f, 1);
+            if (legend && attacker == player)
+            {
+                SlowMo(1.0f, 0.18f);
+                Say(type == 2 ? "NOSE SHOT!" : "LEGENDARY!", 0.3f);
+                if (Crowd.I != null) Crowd.I.Roar();
+                pb.Shake(0.5f);
+            }
             if (Random.value < (heavy ? 0.7f : 0.35f)) FloorSplat(victim.transform.position + new Vector3(Random.Range(-0.5f, 0.5f), 0f, Random.Range(-0.5f, 0.5f)));
         }
     }

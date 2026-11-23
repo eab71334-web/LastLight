@@ -349,23 +349,38 @@ public static partial class SceneBuilder
         joy.radius = 110f;
         pb.joystick = joy;
 
-        // punch buttons
-        Image cross = MakeImage(st, "CrossButton", new Color(1f, 0.2f, 0.4f, 0.6f), knob);
-        Fixed(cross.transform, br, mid, new Vector2(-190, 300), new Vector2(260, 260));
-        pb.crossButton = cross.gameObject.AddComponent<Button>(); pb.crossButton.targetGraphic = cross;
-        StyledButton sbCross = cross.gameObject.AddComponent<StyledButton>(); sbCross.look = StyledButton.Look.Primary; sbCross.circle = true; sbCross.alpha = 0.9f; sbCross.silent = true;
-        Text cl = MakeText(cross.transform, "Label", "CROSS", 44, TextAnchor.MiddleCenter, Color.white, FontStyle.Bold);
-        Stretch(cl.transform, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
+        // punch stick (right side): flick up = straight, sideways = hook, down = uppercut
+        Image pbg = MakeImage(st, "PunchStick", new Color(1f, 0.3f, 0.3f, 0.18f), knob);
+        Fixed(pbg.transform, br, mid, new Vector2(-250, 250), new Vector2(340, 340));
+        Image ph = MakeImage(pbg.transform, "Handle", new Color(1f, 0.35f, 0.3f, 0.6f), knob, false, false);
+        Fixed(ph.transform, mid, mid, Vector2.zero, new Vector2(150, 150));
+        VirtualJoystick pj = pbg.gameObject.AddComponent<VirtualJoystick>();
+        pj.background = (RectTransform)pbg.transform;
+        pj.handle = (RectTransform)ph.transform;
+        pj.radius = 115f;
+        pb.punchStick = pj;
+        Text pl = MakeText(pbg.transform, "Label", "PUNCH", 34, TextAnchor.MiddleCenter, new Color(1f, 1f, 1f, 0.55f), FontStyle.Bold);
+        Fixed(pl.transform, mid, mid, new Vector2(0, 205), new Vector2(300, 50));
 
-        Image jab = MakeImage(st, "JabButton", new Color(1f, 0.55f, 0.15f, 0.6f), knob);
-        Fixed(jab.transform, br, mid, new Vector2(-470, 200), new Vector2(210, 210));
-        pb.jabButton = jab.gameObject.AddComponent<Button>(); pb.jabButton.targetGraphic = jab;
-        StyledButton sbJab = jab.gameObject.AddComponent<StyledButton>(); sbJab.look = StyledButton.Look.Orange; sbJab.circle = true; sbJab.alpha = 0.9f; sbJab.silent = true;
-        Text jl = MakeText(jab.transform, "Label", "JAB", 40, TextAnchor.MiddleCenter, Color.white, FontStyle.Bold);
-        Stretch(jl.transform, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
+        // hand switch
+        Image hand = MakeImage(st, "HandButton", new Color(1f, 0.55f, 0.15f, 0.6f), knob);
+        Fixed(hand.transform, br, mid, new Vector2(-600, 180), new Vector2(200, 200));
+        pb.handButton = hand.gameObject.AddComponent<Button>(); pb.handButton.targetGraphic = hand;
+        StyledButton sbHand = hand.gameObject.AddComponent<StyledButton>(); sbHand.look = StyledButton.Look.Orange; sbHand.circle = true; sbHand.alpha = 0.9f; sbHand.silent = true;
+        Text hl = MakeText(hand.transform, "Label", "LEFT\nHAND", 34, TextAnchor.MiddleCenter, Color.white, FontStyle.Bold);
+        Stretch(hl.transform, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
+        pb.handLabel = hl;
+
+        // duck
+        Image duck = MakeImage(st, "DuckButton", new Color(0.7f, 0.4f, 1f, 0.55f), knob);
+        Fixed(duck.transform, br, mid, new Vector2(-250, 560), new Vector2(190, 190));
+        pb.duckButton = duck.gameObject.AddComponent<HoldButton>();
+        StyledButton sbDuck = duck.gameObject.AddComponent<StyledButton>(); sbDuck.look = StyledButton.Look.Primary; sbDuck.circle = true; sbDuck.alpha = 0.9f; sbDuck.silent = true;
+        Text dl = MakeText(duck.transform, "Label", "DUCK", 36, TextAnchor.MiddleCenter, Color.white, FontStyle.Bold);
+        Stretch(dl.transform, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
 
         Image blk = MakeImage(st, "BlockButton", new Color(0.1f, 0.8f, 1f, 0.55f), knob);
-        Fixed(blk.transform, br, mid, new Vector2(-470, 450), new Vector2(200, 200));
+        Fixed(blk.transform, br, mid, new Vector2(-600, 420), new Vector2(200, 200));
         pb.blockButton = blk.gameObject.AddComponent<HoldButton>();
         StyledButton sbBlk = blk.gameObject.AddComponent<StyledButton>(); sbBlk.look = StyledButton.Look.Cyan; sbBlk.circle = true; sbBlk.alpha = 0.9f; sbBlk.silent = true;
         Text bl = MakeText(blk.transform, "Label", "BLOCK", 38, TextAnchor.MiddleCenter, Color.white, FontStyle.Bold);

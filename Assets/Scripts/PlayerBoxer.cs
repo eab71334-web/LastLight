@@ -9,7 +9,12 @@ public class PlayerBoxer : MonoBehaviour
     public Transform cam;
     public VirtualJoystick joystick;
     public HoldButton blockButton;
-    public Button jabButton, crossButton;
+    public Button jabButton, crossButton, handButton;
+    public VirtualJoystick punchStick;
+    public HoldButton duckButton;
+    public Text handLabel;
+    bool leftHand = true, armed = true, ducked;
+    float stickStart = -1f, bufUntil; int bufType; bool bufLeft; float bufPower;
 
     float shake, bobT, camY = 1.65f, roll;
     float yaw, pitch;
@@ -20,6 +25,8 @@ public class PlayerBoxer : MonoBehaviour
     {
         if (jabButton != null) jabButton.onClick.AddListener(() => Punch(false));
         if (crossButton != null) crossButton.onClick.AddListener(() => Punch(true));
+        if (handButton != null) handButton.onClick.AddListener(() => { leftHand = !leftHand; ShowHand(); });
+        ShowHand();
     }
 
     public void Shake(float s) { shake = Mathf.Max(shake, s); }
@@ -45,8 +52,47 @@ public class PlayerBoxer : MonoBehaviour
         if (cam != null) cam.rotation = Quaternion.Euler(0f, yaw, 0f);
     }
 
+    void ShowHand() { if (handLabel != null) handLabel.text = leftHand ? "LEFT\nHAND" : "RIGHT\nHAND"; }
+
+    void Punch(bool cross) { DoPunch(0, !cross, cross ? 0.6f : 0.5f); }
+
+    // Flick the punch stick: up = straight, sideways = hook, down = uppercut. Faster flick = harder punch.
+    void ReadPunchStick()
+    {
+        if (punchStick == null) return;
+        Vector2 v = punchStick.Value;
+        float mag = v.magnitude;
+        if (mag < 0.2f) { armed = true; stickStart = -1f; return; }
+        if (stickStart < 0f) stickStart = Time.unscaledTime;
+        if (!armed || mag < 0.55f) return;
+        armed = false;
+        float power = Mathf.Clamp01(1.15f - (Time.unscaledTime - stickStart) / 0.28f);
+        int type = Mathf.Abs(v.x) > Mathf.Abs(v.y) * 1.1f ? 1 : (v.y < -0.3f ? 2 : 0);
+        bool left = type == 1 ? v.x < 0f : leftHand;
+        DoPunch(type, left, power);
+    }
+
+    void DoPunch(int type, bool left, float power)
+    {
+        bufType = type; bufLeft = left; bufPower = power; bufUntil = Time.unscaledTime + 0.2f;
+        TryBuffered();
+    }
+
+    void TryBuffered()
+    {
+        if (Time.unscaledTime > bufUntil) return;
+        if (AimAndThrow()) bufUntil = 0f;
+    }
+
     // Light aim assist: a punch thrown roughly at the opponent turns you most of the way to them.
-    void Punch(bool cross)
+    bool AimAndThrow()
+    {
+        if (!fighter.CanAct || fighter.Blocking || fighter.IsWinding) return false;
+        bool legend = bufPower >= 0.9f && bufType > 0 && Random.value < (bufType == 2 && fighter.Ducking ? 0.7f : 0.4f);
+        return PunchNow(bufType, bufLeft, bufPower, legend);
+    }
+
+    bool PunchNow(int type, bool left, float power, bool legend)
     {
         if (fighter.opponent != null && !fighter.Down)
         {
@@ -59,7 +105,7 @@ public class PlayerBoxer : MonoBehaviour
                 if (Mathf.Abs(diff) < 50f) yaw += diff * 0.7f;
             }
         }
-        fighter.TryPunch(cross);
+        return fighter.Throw(type, left, power, legend);
     }
 
     void ReadLook()
@@ -94,7 +140,11 @@ public class PlayerBoxer : MonoBehaviour
         if (Input.GetKeyDown(KeyCode.J)) Punch(false);
         if (Input.GetKeyDown(KeyCode.K)) Punch(true);
         block = block || Input.GetKey(KeyCode.L);
+        ducked = Input.GetKey(KeyCode.C);
 #endif
+        bool duck = ducked || (duckButton != null && duckButton.Held);
+        fighter.Ducking = fighting && !fighter.Down && duck;
+        if (fighting && !fighter.Down) { ReadPunchStick(); TryBuffered(); }
         if (!yawInit) FaceOpponentNow();
         if (fighting && !fighter.Down) ReadLook();
         if (!fighter.Down) transform.rotation = Quaternion.Euler(0f, yaw, 0f);
@@ -113,7 +163,7 @@ public class PlayerBoxer : MonoBehaviour
     {
         if (cam == null) return;
         float dt = Time.deltaTime;
-        float targetY = fighter.Down ? 0.35f : 1.65f;
+        float targetY = fighter.Down ? 0.35f : (fighter.Ducking ? 1.1f : 1.65f);
         camY = Mathf.Lerp(camY, targetY, dt * (fighter.Down ? 3f : 10f));
         roll = Mathf.Lerp(roll, fighter.Down ? 70f : 0f, dt * 3f);
 
