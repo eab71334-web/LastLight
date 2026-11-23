@@ -115,7 +115,7 @@ public class Fighter : MonoBehaviour
         float regen = staminaRegen * (Blocking ? 0.4f : 1f);
         stamina = Mathf.Min(maxStamina, stamina + regen * dt);
         if (Rig != null) Rig.SetBlock(Blocking);
-        FaceOpponent(dt);
+        if (!isPlayer) FaceOpponent(dt);
         AnimateGloves();
     }
 
@@ -154,6 +154,7 @@ public class Fighter : MonoBehaviour
             transform.position += away * 0.08f;
             if (stamina <= 0f) { stamina = 0f; Blocking = false; stagger = 0.55f; if (Rig != null) Rig.Stagger(); }
             else if (Rig != null) Rig.Hit(true, heavy);
+            if (Rig != null) Rig.Impulse(away, 0.3f);
         }
         else
         {
@@ -161,7 +162,7 @@ public class Fighter : MonoBehaviour
             stagger = heavy ? 0.32f : 0.16f;
             pendingKind = 0;
             transform.position += away * (heavy ? 0.45f : 0.2f);
-            if (Rig != null) Rig.Hit(false, heavy);
+            if (Rig != null) { Rig.Hit(false, heavy); Rig.Impulse(away, heavy ? 1f : 0.55f); }
         }
         ClampToRing();
         BoutManager.I.OnHit(this, from, dmg, blocked, heavy);

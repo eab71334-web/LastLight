@@ -108,6 +108,7 @@ public class BoxerRig : MonoBehaviour
     enum Mode { Loop, OneShot, Hold }
     Mode mode = Mode.Loop;
     bool blocking, ko, won;
+    Vector2 tilt, tiltV;     // spring-driven whole-body lean (x = pitch, y = roll) for hit reactions
     Vector3 lastPos, localVel;
     bool stepping;
     float stepScale = 1f;
@@ -212,6 +213,14 @@ public class BoxerRig : MonoBehaviour
 
     // ------------------------------------------------------------ commands from Fighter / BoutManager
     public void NoteMove() { }   // movement is now read from the transform (see UpdateStep)
+
+    /// <summary>Punch impact: the whole body snaps away from the hit direction and springs back.</summary>
+    public void Impulse(Vector3 awayWorld, float strength)
+    {
+        if (!Built) return;
+        Vector3 a = transform.InverseTransformDirection(awayWorld);
+        tiltV += new Vector2(a.z, -a.x) * (170f * strength);
+    }
 
     public void SetBlock(bool b)
     {
@@ -327,6 +336,11 @@ public class BoxerRig : MonoBehaviour
         Vector3 root = Vector3.Lerp(cur.root[f0], cur.root[f1], u) + d.rest[0];
         outRoot = k < 1f ? Vector3.Lerp(fadeRootFrom, root, k) : root;
         bones[0].localPosition = outRoot;
+        float dtc = Mathf.Min(dt, 0.033f);
+        tiltV += (-140f * tilt - 14f * tiltV) * dtc;
+        tilt += tiltV * dtc;
+        tilt = Vector2.ClampMagnitude(tilt, 28f);
+        modelRoot.localRotation = Quaternion.Euler(tilt.x, 0f, tilt.y);
         for (int i = 0; i < nb; i++)
         {
             Quaternion q = Quaternion.Slerp(cur.rot[b0 + i], cur.rot[b1 + i], u);

@@ -143,6 +143,7 @@ public class BoutManager : MonoBehaviour
         player.hp = keep;
         player.transform.SetPositionAndRotation(new Vector3(0f, 0f, -2.5f), Quaternion.identity);
         bot.transform.SetPositionAndRotation(new Vector3(0f, 0f, 2.5f), Quaternion.Euler(0f, 180f, 0f));
+        if (pb != null) pb.FaceOpponentNow();
         timeLeft = 90f;
         if (botNameText != null) botNameText.text = d.name;
         if (fightText != null) fightText.text = "FIGHT " + (i + 1) + " / " + Opps.Length;
@@ -205,6 +206,7 @@ public class BoutManager : MonoBehaviour
         if (victim == player)
         {
             pb.Shake(heavy ? 0.6f : 0.3f);
+            pb.Kick(heavy);
             hurtAlpha = Mathf.Min(0.8f, hurtAlpha + (heavy ? 0.5f : 0.3f));
             ScreenSplat(heavy ? 2 : 1);
         }
